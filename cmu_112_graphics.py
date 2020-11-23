@@ -272,7 +272,7 @@ class App(object):
         app._root.geometry(f'+{x}+{y}')
 
     def showMessage(app, message):
-        messagebox.showinfo('showMessage', message, parent=app._root)
+        messagebox.showinfo('showMessage', message)
 
     def getUserInput(app, prompt):
         return simpledialog.askstring('getUserInput', prompt)
