@@ -1,5 +1,6 @@
 from cmu_112_graphics import *
 
+# splash screen
 class splashMode(Mode):
     def appStarted(mode):
         # start button dimensions
@@ -24,6 +25,7 @@ class splashMode(Mode):
         if (mode.bx1 <= event.x <= mode.bx2 and mode.by1 <= event.y <= mode.by2):
             mode.app.setActiveMode(mode.app.gameMode)
 
+# game mode
 class gameMode(Mode):
     def appStarted(mode):
         # character
@@ -42,7 +44,11 @@ class gameMode(Mode):
         bgScale = mode.height/bgH
         mode.bgImage1 = mode.scaleImage(mode.bgImage, bgScale)
         # platforms
-        mode.platforms = [('ground', 400, 'light green'), ('ground', 50, 'white'),('ground', 100, 'pink')]
+        mode.platforms = [('start', 200, 'black'), ('ground', 400, 'light green'), 
+                          ('ground', 50, 'white'), ('ground', 100, 'pink'), ('gap', 100, None),
+                          ('ground', 300, 'light green'), ('ground', 100, 'pink'),
+                          ('gap', 100, None), ('finish', 200, 'black')
+                          ]
         mode.platcoords = []
         mode.platY = 0
         # obstacles
@@ -65,13 +71,20 @@ class gameMode(Mode):
     def timerFired(mode):
         if mode.isJumping:
             mode.jump()
+            mode.platY += 10
         if mode.isWalking:
-            mode.walk()
+            mode.walk() 
     
+    # check if bunny on ground
+    def onGround(mode):
+        pass
+    
+    # make bunny walk
     def walk(mode):
         mode.sprite = mode.sprite.transpose(Image.FLIP_LEFT_RIGHT)
         mode.isWalking = False
 
+    # make bunny jump
     def jump(mode):
         # physics calculation taken from https://www.geeksforgeeks.org/python-making-an-object-jump-in-pygame/
         F = (1/2) * mode.miiMass * (mode.miiVel**2) 
@@ -79,6 +92,8 @@ class gameMode(Mode):
         mode.miiVel = mode.miiVel - 1 
         if mode.miiVel < 0:
             mode.miiMass = -1
+        if mode.miiVel == -.5:
+            mode.sprite = mode.sprite.transpose(Image.FLIP_LEFT_RIGHT)
         if mode.miiVel == -8.5:
             mode.isJumping = False
             mode.miiVel = 7.5
@@ -91,16 +106,27 @@ class gameMode(Mode):
         if (mode.rx1 <= event.x <= mode.rx2 and mode.ry1 <= event.y <= mode.ry2):
             mode.appStarted()
     
+    # draw obstacle
+    def drawObstacle(mode, canvas):
+        pass
+
+    # draw platform
     def drawPlatform(mode, canvas):
         curY = 0
         width = 800
         for platform in mode.platforms:
-            if platform[0] == 'ground':
-                x1, y1 = mode.width/2 - width, mode.height - curY + mode.platY  # bottom left
-                x2, y2 = mode.width/2 + width, mode.height - curY + mode.platY  # bottom right
-                x3, y3 = mode.width/2 + width/3, mode.height - platform[1] - curY + mode.platY  # top right
-                x4, y4 = mode.width/2 - width/3, mode.height - platform[1] - curY + mode.platY  # top left
+            if platform[0] != 'gap':
+                x1, y1 = mode.width/2 - width - mode.platY, mode.height - curY + mode.platY  # bottom left
+                x2, y2 = mode.width/2 + width + mode.platY, mode.height - curY + mode.platY  # bottom right
+                x3, y3 = mode.width/2 + width/3 + mode.platY, mode.height - platform[1] - curY + mode.platY  # top right
+                x4, y4 = mode.width/2 - width/3 - mode.platY, mode.height - platform[1] - curY + mode.platY  # top left
                 canvas.create_polygon(x1, y1, x2, y2, x3, y3, x4, y4, fill = platform[2])
+            if platform[0] == 'start':
+                canvas.create_text((x1 + x2)/2, (y1 + y3)/2, 
+                                    text = 'START', font = 'Arial 30 bold', fill = 'white')
+            if platform[0] == 'finish':
+                canvas.create_text((x1 + x2)/2, (y1 + y3)/2, 
+                                    text = 'FINISH', font = 'Arial 30 bold', fill = 'white')
             curY += platform[1]
             width = width/3
 
