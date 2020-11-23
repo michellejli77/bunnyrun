@@ -81,13 +81,7 @@ class gameMode(Mode):
         # game position
         mode.isFinished = False
         # scores
-        # name input taken from 
-        # http://www.cs.cmu.edu/~112/notes/notes-animations-part3.html#subclassingApp
-        mode.name = mode.getUserInput('Enter name: ')
-        while (mode.name == ''):
-            mode.message = 'No name entered'
-            mode.showMessage('No name entered')
-            mode.name = mode.getUserInput('Enter name: ')
+        mode.name = None
         mode.highScores = dict()
 
     def keyPressed(mode, event):
@@ -110,12 +104,32 @@ class gameMode(Mode):
             mode.timerFiredTime -= 1
             if mode.timerFiredTime % 20 == 0:
                 mode.totalTime -= 1
+        if mode.platcoords[-1] != None:
+            (x1, y1, x2, y2, x3, y3, x4, y4) = mode.platcoords[-1]
+        if not(mode.isJumping) and x4 <= 610 <= x3 and y3 <= 610 <= y1:
+            mode.isFinished = True
         if mode.isFinished:
+            mode.name = mode.getUserInput('Enter name to save score: ')
+            while (mode.name == ''):
+                # name input taken from 
+                # http://www.cs.cmu.edu/~112/notes/notes-animations-part3.html#subclassingApp
+                mode.message = 'No name entered'
+                mode.showMessage('No name entered')
+                mode.name = mode.getUserInput('Enter name: ')
             mode.highScores[mode.name] = mode.totalTime
+            mode.appStarted()
+            mode.app.setActiveMode(mode.app.lbMode)
+        mode.onGround()
     
     # check if bunny on ground
     def onGround(mode):
-        pass
+        if mode.platcoords != ([None] * len(mode.platforms)):
+            for platform in mode.platcoords:
+                if platform != None:
+                    (x1, y1, x2, y2, x3, y3, x4, y4) = platform
+                    if mode.isJumping or x4 <= 610 <= x3 and y3 <= 610 <= y1:
+                        return 
+            mode.isFalling = True
     
     # make bunny walk
     def walk(mode):
@@ -195,6 +209,8 @@ class gameMode(Mode):
         canvas.create_text((mode.rx1 + mode.rx2)/2, (mode.ry1 + mode.ry2)/2, text = 'RESET')
         # draw timer
         mode.drawTimer(canvas)
+        if mode.isFalling:
+            canvas.create_text(mode.width/2, mode.height/2, text = 'YOU FELL')
 
 # leaderboard mode
 class lbMode(gameMode):
