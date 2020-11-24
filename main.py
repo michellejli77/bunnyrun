@@ -1,5 +1,6 @@
 from cmu_112_graphics import *
 import time
+# from filename import *
 
 # splash screen
 class splashMode(Mode):
@@ -41,6 +42,10 @@ class gameMode(Mode):
     def appStarted(mode):
         # character
         mode.oldsprite = mode.loadImage('images/molang.png')
+        imageWidth, imageHeight = mode.oldsprite.size
+        mode.bunny = mode.loadImage('images/tonton.gif')
+        bunWidth, bunHeight = mode.bunny.size
+        # mode.sprite = mode.scaleImage(mode.bunny, imageHeight/bunHeight)
         mode.sprite = mode.scaleImage(mode.oldsprite, 1)
         # mii character info
         mode.miiX = mode.width/2
@@ -57,14 +62,7 @@ class gameMode(Mode):
         bgScale = mode.height/bgH
         mode.bgImage1 = mode.scaleImage(mode.bgImage, bgScale)
         # platforms
-        mode.platforms = [('start', 200, 'black'), ('ground', 400, 'light green'), 
-                          ('ground', 50, 'white'), ('ground', 100, 'pink'), 
-                          ('gap', 100, None), ('ground', 300, 'light green'), 
-                          ('ground', 100, 'pink'), ('gap', 100, None), 
-                          ('finish', 200, 'black')
-                          ]
-        mode.platcoords = [None] * len(mode.platforms)
-        mode.platY = 0
+        mode.resetPlatforms()
         # obstacles
         mode.obstacles = None
         # back button
@@ -83,6 +81,20 @@ class gameMode(Mode):
         # scores
         mode.name = None
         mode.highScores = dict()
+    
+    def resetPlatforms(mode):
+        mode.platforms = [('start', 200, 'black'), ('ground', 400, 'light green'), 
+                          ('ground', 50, 'white'), ('ground', 100, 'pink'), 
+                          ('gap', 100, None), ('ground', 300, 'light green'), 
+                          ('ground', 100, 'pink'), ('gap', 100, None), 
+                          ('finish', 200, 'black')
+                          ]
+        mode.platcoords = [None] * len(mode.platforms)
+        mode.boxsize = 720
+        mode.platX = mode.width/2
+        mode.platY = 1500
+        # reset time
+        mode.totalTime = 60
 
     def keyPressed(mode, event):
         if event.key == 'Space' or event.key == 'Up':
@@ -92,12 +104,13 @@ class gameMode(Mode):
                 mode.isJumping = True
             elif event.key == "Up":
                 mode.isWalking = True
-                mode.platY += 10
+                mode.boxsize += 10
 
     def timerFired(mode):
         if mode.isJumping:
             mode.jump()
-            mode.platY += 10
+            mode.boxsize += 10
+            mode.platY += 20
         if mode.isWalking:
             mode.walk() 
         if mode.hasMoved:
@@ -106,8 +119,8 @@ class gameMode(Mode):
                 mode.totalTime -= 1
         if mode.platcoords[-1] != None:
             (x1, y1, x2, y2, x3, y3, x4, y4) = mode.platcoords[-1]
-        if not(mode.isJumping) and x4 <= 610 <= x3 and y3 <= 610 <= y1:
-            mode.isFinished = True
+            if not(mode.isJumping) and x4 <= 610 <= x3 and y3 <= 610 <= y1: # 610 y for molang, 626 bunny
+                mode.isFinished = True
         if mode.isFinished:
             mode.name = mode.getUserInput('Enter name to save score: ')
             while (mode.name == ''):
@@ -120,6 +133,9 @@ class gameMode(Mode):
             mode.appStarted()
             mode.app.setActiveMode(mode.app.lbMode)
         mode.onGround()
+        if mode.isFalling:
+            mode.resetPlatforms()
+            mode.isFalling = False
     
     # check if bunny on ground
     def onGround(mode):
@@ -145,7 +161,7 @@ class gameMode(Mode):
         mode.miiVel = mode.miiVel - 1 
         if mode.miiVel < 0:
             mode.miiMass = -1
-        if mode.miiVel == -.5:
+        if mode.miiVel == .5:
             mode.sprite = mode.sprite.transpose(Image.FLIP_LEFT_RIGHT)
         if mode.miiVel == -8.5:
             mode.isJumping = False
@@ -165,6 +181,47 @@ class gameMode(Mode):
 
     # draw platform
     def drawPlatform(mode, canvas):
+        # platform width = 400, lenght = 200, height = 3
+        # (200, 100, 3) (-200, 100, 3)
+        # https://github.com/novel-yet-trivial/Tkinter3DExperiment/blob/28e59802d1e602d8a6b3f201bf36052364669ff5/OnePointPerspectiveCube.py
+        curY = mode.platY
+        curSize = mode.boxsize
+        half_width = mode.width / 2
+        half_height = mode.height / 2
+        for index in range(0, 1, 1):
+            dx = 0
+            dy = 0
+            platform = mode.platforms[index]
+            if platform[0] != 'gap':
+                boxsize = curSize
+                mode.x = mode.platX 
+                mode.y = curY
+                x1 = mode.x-boxsize
+                y1 = mode.y-boxsize
+                x2 = mode.x+boxsize
+                y2 = mode.y+boxsize
+                x3 = (half_width+x1)/2
+                y3 = (half_height+y2)/2
+                x4 = (half_width+x1+boxsize*2)/2
+                y4 = (half_height+y2)/2
+                x5 = (half_width+x1)/2
+                y5 = (half_height+y1)/2
+                x6 = (half_width+x1)/2
+                y6 = (half_height+y2)/2
+                x7 = (half_width+x1+boxsize*2)/2
+                y7 = (half_height+y1)/2
+                # canvas.create_polygon(x2,y2,x1+boxsize*2,y1,x7,y7, x4, y4, fill = 'orange')
+                # canvas.create_polygon(x5, y5, x6, y6, x2 - boxsize*2, y2, x1, y1, fill = 'blue')
+                # canvas.create_polygon(x3, y3, x4, y4, x2, y2, x2 - boxsize*2, y2, fill = 'pink', outline = 'black')
+                canvas.create_polygon(x5, y5, x1, y1, x1+boxsize*2, y1, x7, y7, fill = platform[2])
+                mode.platcoords[0] = (x5, y5, x1, y1, x1+boxsize*2, y1, x7, y7) # bot right bot left top left top right
+            if platform[0] == 'start':
+                canvas.create_text((x5 + x7)/2, (y5 + y1)/2, 
+                                    text = 'START', font = 'Arial 30 bold', fill = 'white')
+            if platform[0] == 'finish':
+                canvas.create_text((x1 + x2)/2, (y1 + y3)/2, 
+                                    text = 'FINISH', font = 'Arial 30 bold', fill = 'white')
+        '''
         curY = 0
         width = 800
         for index in range(len(mode.platforms)):
@@ -184,6 +241,7 @@ class gameMode(Mode):
                                     text = 'FINISH', font = 'Arial 30 bold', fill = 'white')
             curY += platform[1]
             width = width/3
+        '''
     
     def drawTimer(mode, canvas):
         tx1, ty1 = mode.width - 200, 20
@@ -210,7 +268,7 @@ class gameMode(Mode):
         # draw timer
         mode.drawTimer(canvas)
         if mode.isFalling:
-            canvas.create_text(mode.width/2, mode.height/2, text = 'YOU FELL')
+            canvas.create_text(mode.width/2, mode.height/2, text = 'YOU FELL', font = 'Arial 30 bold')
 
 # leaderboard mode
 class lbMode(gameMode):
