@@ -90,11 +90,12 @@ class gameMode(Mode):
                           ('finish', 200, 'black')
                           ]
         mode.platcoords = [None] * len(mode.platforms)
-        mode.boxsize = 720
+        mode.boxsize = 800
         mode.platX = mode.width/2
-        mode.platY = 1500
+        mode.platY = 1600
         # reset time
         mode.totalTime = 60
+        mode.endTime = None
 
     def keyPressed(mode, event):
         if event.key == 'Space' or event.key == 'Up':
@@ -104,13 +105,18 @@ class gameMode(Mode):
                 mode.isJumping = True
             elif event.key == "Up":
                 mode.isWalking = True
-                mode.boxsize += 10
+                mode.platY = mode.boxsize*2
+                mode.boxsize += mode.boxsize/20
 
     def timerFired(mode):
+        if mode.totalTime == 0:
+            mode.isFinished = True
+            mode.endTime = mode.totalTime
         if mode.isJumping:
             mode.jump()
-            mode.boxsize += 10
-            mode.platY += 20
+            mode.boxsize += mode.boxsize/20
+            mode.platY = mode.boxsize*2
+            print(mode.boxsize, mode.platY)
         if mode.isWalking:
             mode.walk() 
         if mode.hasMoved:
@@ -143,7 +149,7 @@ class gameMode(Mode):
             for platform in mode.platcoords:
                 if platform != None:
                     (x1, y1, x2, y2, x3, y3, x4, y4) = platform
-                    if mode.isJumping or x4 <= 610 <= x3 and y3 <= 610 <= y1:
+                    if mode.isJumping or x1 <= 610 <= x4 and y1 <= 610 <= y3:
                         return 
             mode.isFalling = True
     
@@ -184,43 +190,51 @@ class gameMode(Mode):
         # platform width = 400, lenght = 200, height = 3
         # (200, 100, 3) (-200, 100, 3)
         # https://github.com/novel-yet-trivial/Tkinter3DExperiment/blob/28e59802d1e602d8a6b3f201bf36052364669ff5/OnePointPerspectiveCube.py
-        curY = mode.platY
-        curSize = mode.boxsize
+        mode.y = mode.platY
+        mode.x = mode.platX 
+        boxsize = mode.boxsize
         half_width = mode.width / 2
         half_height = mode.height / 2
-        for index in range(0, 1, 1):
-            dx = 0
-            dy = 0
+        dy = 0
+        x1 = mode.x-boxsize
+        y1 = mode.y-boxsize
+        x2 = mode.x+boxsize
+        y2 = mode.y+boxsize
+        x3 = (half_width+x1)/2
+        y3 = (half_height+y2)/2
+        x4 = (half_width+x1+boxsize*2)/2
+        y4 = (half_height+y2)/2
+        x5 = (half_width+x1)/2 
+        y5 = (half_height+y1)/2
+        x6 = (half_width+x1)/2
+        y6 = (half_height+y2)/2
+        x7 = (half_width+x1+boxsize*2)/2
+        y7 = (half_height+y1)/2
+        botrightX = x1+boxsize*2
+        for index in range(len(mode.platforms)):
             platform = mode.platforms[index]
             if platform[0] != 'gap':
-                boxsize = curSize
-                mode.x = mode.platX 
-                mode.y = curY
-                x1 = mode.x-boxsize
-                y1 = mode.y-boxsize
-                x2 = mode.x+boxsize
-                y2 = mode.y+boxsize
-                x3 = (half_width+x1)/2
-                y3 = (half_height+y2)/2
-                x4 = (half_width+x1+boxsize*2)/2
-                y4 = (half_height+y2)/2
-                x5 = (half_width+x1)/2
-                y5 = (half_height+y1)/2
-                x6 = (half_width+x1)/2
-                y6 = (half_height+y2)/2
-                x7 = (half_width+x1+boxsize*2)/2
-                y7 = (half_height+y1)/2
                 # canvas.create_polygon(x2,y2,x1+boxsize*2,y1,x7,y7, x4, y4, fill = 'orange')
                 # canvas.create_polygon(x5, y5, x6, y6, x2 - boxsize*2, y2, x1, y1, fill = 'blue')
                 # canvas.create_polygon(x3, y3, x4, y4, x2, y2, x2 - boxsize*2, y2, fill = 'pink', outline = 'black')
-                canvas.create_polygon(x5, y5, x1, y1, x1+boxsize*2, y1, x7, y7, fill = platform[2])
-                mode.platcoords[0] = (x5, y5, x1, y1, x1+boxsize*2, y1, x7, y7) # bot right bot left top left top right
+                canvas.create_polygon(x5, y5, x1, y1, botrightX, y1, x7, y7, fill = platform[2])
+                mode.platcoords[index] = (x5, y5, x1, y1, botrightX, y1, x7, y7) # top left bot left bot right top right
             if platform[0] == 'start':
                 canvas.create_text((x5 + x7)/2, (y5 + y1)/2, 
                                     text = 'START', font = 'Arial 30 bold', fill = 'white')
             if platform[0] == 'finish':
                 canvas.create_text((x1 + x2)/2, (y1 + y3)/2, 
                                     text = 'FINISH', font = 'Arial 30 bold', fill = 'white')
+            x1 = x5
+            y1 = y5
+            botrightX = x7
+            y1 = y7
+            x5 = (half_width+x1)/2
+            y5 = (half_height+y1)/2
+            x7 = (half_width+botrightX)/2
+            y7 = (half_height+y1)/2
+
+            
         '''
         curY = 0
         width = 800

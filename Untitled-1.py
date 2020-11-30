@@ -8,7 +8,7 @@ except ImportError:
     import ttk
 from random import randint
 
-BOX_SIZE = 55
+BOX_SIZE = 35
 COLORS = ['pink']
 class PerspectiveCube:
     def __init__(self, canvas):
@@ -17,15 +17,21 @@ class PerspectiveCube:
         color = ['pink']
         for _ in range(4):
             p = canvas.create_polygon(0,0,0,0,0,0, outline=color, fill='', width=4)
+            self.canvas.tag_bind(p, "<B1-Motion>", self._on_clickndrag)
             self.polygons.append(p)
         self.update_screen(
-            300,
-            300) #initial point
+            randint(BOX_SIZE, canvas.winfo_width()),
+            randint(BOX_SIZE, canvas.winfo_height())) #initial point
+
+    def _on_clickndrag(self, event):
+        self.update_screen(event.x, event.y)
 
     def update_screen(self, x=None, y=None):
         # A HORRIBLE MESS OF VARIABLES. DON'T LOOK. IT MIGHT BURN YOUR EYES.
-        self.x = 300
-        self.y = 500
+        if x is not None:
+            self.x = x
+        if y is not None:
+            self.y = y
         half_width = self.canvas.winfo_width() / 2
         half_height = self.canvas.winfo_height() / 2
         x1 = self.x-BOX_SIZE
