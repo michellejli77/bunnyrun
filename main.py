@@ -80,7 +80,7 @@ class gameMode(Mode):
         mode.isFinished = False
         # scores
         mode.name = None
-        mode.highScores = dict()
+        mode.highScores = {'Michelle': 100}
     
     def resetPlatforms(mode):
         mode.platforms = [('start', 200, 'black'), ('ground', 400, 'light green'), 
@@ -301,6 +301,12 @@ class lbMode(gameMode):
         # back button
         canvas.create_rectangle(mode.bx1, mode.by1, mode.bx2, mode.by2, fill = 'pink')
         canvas.create_text((mode.bx1 + mode.bx2)/2, (mode.by1 + mode.by2)/2, text = 'BACK')
+        canvas.create_text(mode.width/2, 20, text = 'LEADERBOARD', font = 'Arial 30 bold')
+        y = 60
+        for name in mode.highScores:
+            canvas.create_text(mode.width/2 - 100, y, text = f'{name}', font = 'Arial 15 bold')
+            canvas.create_text(mode.width/2 + 100, y, text = f'{mode.highScores[name]}', font = 'Arial 15 bold')
+            y += 40
 
 # from http://www.cs.cmu.edu/~112/notes/notes-animations-part3.html#subclassingModalApp
 class MyModalApp(ModalApp):
