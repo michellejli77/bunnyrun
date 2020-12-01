@@ -1,3 +1,4 @@
+from cmu_112_graphics import *
 from game import *
 
 # leaderboard mode
@@ -17,12 +18,9 @@ class lbMode(gameMode):
         # back button
         canvas.create_rectangle(mode.bx1, mode.by1, mode.bx2, mode.by2, fill = 'pink')
         canvas.create_text((mode.bx1 + mode.bx2)/2, (mode.by1 + mode.by2)/2, text = 'BACK')
-
-# from http://www.cs.cmu.edu/~112/notes/notes-animations-part3.html#subclassingModalApp
-class MyModalApp(ModalApp):
-    def appStarted(app):
-        app.splashMode = splashMode()
-        app.gameMode = gameMode()
-        app.lbMode = lbMode()
-        app.setActiveMode(app.splashMode)
-        app.timerDelay = 20
+        canvas.create_text(mode.width/2, 20, text = 'LEADERBOARD', font = 'Arial 30 bold')
+        y = 60
+        for name in mode.highScores:
+            canvas.create_text(mode.width/2 - 100, y, text = f'{name}', font = 'Arial 15 bold')
+            canvas.create_text(mode.width/2 + 100, y, text = f'{mode.highScores[name]}', font = 'Arial 15 bold')
+            y += 40

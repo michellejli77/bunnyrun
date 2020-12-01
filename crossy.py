@@ -1,8 +1,8 @@
-# OLD VERSION
+# NEW VERSION
 
 from cmu_112_graphics import *
 # game mode
-class gameMode(Mode):
+class crossyMode(Mode):
     def appStarted(mode):
         # character
         mode.oldsprite = mode.loadImage('images/molang.png')
@@ -10,21 +10,16 @@ class gameMode(Mode):
         mode.bunny = mode.loadImage('images/tonton.gif')
         bunWidth, bunHeight = mode.bunny.size
         # mode.sprite = mode.scaleImage(mode.bunny, imageHeight/bunHeight)
-        mode.sprite = mode.scaleImage(mode.oldsprite, 1)
+        mode.sprite = mode.scaleImage(mode.oldsprite, 75.5/imageHeight)
         # mii character info
         mode.miiX = mode.width/2
-        mode.miiY = mode.height*2/3
+        mode.miiY = mode.height*7.5/10
         mode.isJumping = False
         mode.isWalking = False
         mode.isFalling = False
         mode.miiVel = 7.5
         mode.miiMass = 1
         mode.hasMoved = False
-        # background
-        mode.bgImage = mode.loadImage('images/background.gif')
-        bgW, bgH = mode.bgImage.size
-        bgScale = mode.height/bgH
-        mode.bgImage1 = mode.scaleImage(mode.bgImage, bgScale)
         # platforms
         mode.resetPlatforms()
         # obstacles
@@ -80,6 +75,7 @@ class gameMode(Mode):
             mode.jump()
             mode.boxsize += mode.boxsize/20
             mode.platY = mode.boxsize*2
+            print(mode.boxsize, mode.platY)
         if mode.isWalking:
             mode.walk() 
         if mode.hasMoved:
@@ -88,6 +84,7 @@ class gameMode(Mode):
                 mode.totalTime -= 1
         if mode.platcoords[-1] != None:
             (x1, y1, x2, y2, x3, y3, x4, y4) = mode.platcoords[-1]
+            print((x1, y1, x2, y2, x3, y3, x4, y4))
             if not(mode.isJumping) and x1 <= 610 <= x3 and y4 <= 610 <= y2: # 610 y for molang, 626 bunny
                 mode.isFinished = True
         if mode.isFinished:
@@ -138,6 +135,7 @@ class gameMode(Mode):
             mode.miiMass = 1
     
     def mousePressed(mode, event):
+        print(event.x, event.y)
         if (mode.bx1 <= event.x <= mode.bx2 and mode.by1 <= event.y <= mode.by2):
             mode.app.setActiveMode(mode.app.splashMode)
         if (mode.rx1 <= event.x <= mode.rx2 and mode.ry1 <= event.y <= mode.ry2):
@@ -229,8 +227,6 @@ class gameMode(Mode):
                              image=ImageTk.PhotoImage(mode.timerImage1))
 
     def redrawAll(mode, canvas):
-        # background
-        canvas.create_image(mode.width/2, mode.height/2, image=ImageTk.PhotoImage(mode.bgImage1))
         # platform
         mode.drawPlatform(canvas)
         # draw character
