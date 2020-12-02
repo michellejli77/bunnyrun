@@ -1,5 +1,5 @@
 # NEW VERSION
-
+import copy
 import random
 from cmu_112_graphics import *
 # game mode
@@ -21,13 +21,14 @@ class crossyMode(Mode):
         mode.resetPlatforms()
         mode.nextPlat = None
         # road and cars
-        mode.redcar1 = mode.loadImage('images/redcar')
-        mode.redcar2 = mode.redcar1.transpose(Image.FLIP_LEFT_RIGHT)
-        mode.redcar = mode.scaleImage(mode.redcar2, .5)
-        mode.bcar1 = mode.loadImage('images/bcar')
-        mode.bcar = mode.scaleImage(mode.bcar1, .5)
-        mode.gcar1 = mode.loadImage('images/gcar')
-        mode.gcar = mode.scaleImage(mode.gcar1, .5)
+        # https://lh3.googleusercontent.com/proxy/kaw3Loo5EIMb9IzvJpvV24P3f_Ozy09cSDCtyqvNRpRDcFrRlmGyx-yZyWPMgjp57TNHMHh8NPE9LoQ7uR2qTthL
+        mode.redcar1 = mode.loadImage('images/redcar.png')
+        mode.redcar = mode.scaleImage(mode.redcar1, .3/1.5)
+        mode.bcar2 = mode.loadImage('images/bcar.png')
+        mode.bcar1 = mode.bcar2.transpose(Image.FLIP_LEFT_RIGHT)
+        mode.bcar = mode.scaleImage(mode.bcar1, .2/1.5)
+        mode.gcar1 = mode.loadImage('images/gcar.png')
+        mode.gcar = mode.scaleImage(mode.gcar1, .15/1.5)
         mode.cars = [mode.redcar, mode.bcar, mode.gcar]
         # background pictures
         mode.backgroundPics()
@@ -60,11 +61,12 @@ class crossyMode(Mode):
         index = 3
         while index < len(mode.platforms):
             num = random.randint(0, 5)
-            mode.platforms[index] = platOptions[num]
+            mode.platforms[index] = copy.copy(platOptions[num])
             if index < 10 and mode.platforms[index] == 'ice':
                 mode.platforms[index + 1] = 'ice'
                 index += 1
             index +=1 
+        mode.generateLogs()
         mode.platY = 0
         mode.totalTime = 60
         mode.endTime = None
@@ -77,6 +79,45 @@ class crossyMode(Mode):
                 mode.isJumping = True
             elif event.key == "Up":
                 mode.isWalking = True
+    
+    def timerFired(mode):
+        if mode.totalTime == 0:
+            mode.isFinished = True
+            mode.endTime = mode.totalTime
+        if mode.isJumping:
+            mode.platY += 75.5/8
+            mode.generatePlatform()
+            mode.jump()
+        if mode.isWalking:
+            mode.platY += 75.5/8
+            mode.generatePlatform()
+            mode.walk()
+        if mode.hasMoved:
+            mode.timerFiredTime -= 1
+            if mode.timerFiredTime % 30 == 0:
+                mode.totalTime -= 1
+        if mode.isFinished:
+            mode.name = mode.getUserInput('Enter name to save score: ')
+            while (mode.name == ''):
+                # name input taken from 
+                # http://www.cs.cmu.edu/~112/notes/notes-animations-part3.html#subclassingApp
+                mode.message = 'No name entered'
+                mode.showMessage('No name entered')
+                mode.name = mode.getUserInput('Enter name: ')
+            mode.highScores[mode.name] = mode.totalTime
+            mode.appStarted()
+            mode.app.setActiveMode(mode.app.lbMode)
+        # move the river
+        mode.moveLog()
+        # move the cars
+        mode.moveCars()  
+    
+    def mousePressed(mode, event):
+        print(event.x, event.y)
+        if (mode.bx1 <= event.x <= mode.bx2 and mode.by1 <= event.y <= mode.by2):
+            mode.app.setActiveMode(mode.app.splashMode)
+        if (mode.rx1 <= event.x <= mode.rx2 and mode.ry1 <= event.y <= mode.ry2):
+            mode.appStarted()
     
     def generatePlatform(mode):
         platOptions = [['grass', []], 'ice', 'sand', ['road', []], ['river', []], 'lava']
@@ -98,39 +139,6 @@ class crossyMode(Mode):
             else:
                 mode.platforms.append(platOptions[0])
 
-    def timerFired(mode):
-        if mode.totalTime == 0:
-            mode.isFinished = True
-            mode.endTime = mode.totalTime
-        if mode.isJumping:
-            mode.platY += 75.5/8
-            mode.generatePlatform()
-            mode.jump()
-        if mode.isWalking:
-            mode.platY += 75.5/8
-            mode.generatePlatform()
-            mode.walk()
-        if mode.hasMoved:
-            mode.timerFiredTime -= 1
-            if mode.timerFiredTime % 50 == 0:
-                mode.totalTime -= 1
-        if mode.isFinished:
-            mode.name = mode.getUserInput('Enter name to save score: ')
-            while (mode.name == ''):
-                # name input taken from 
-                # http://www.cs.cmu.edu/~112/notes/notes-animations-part3.html#subclassingApp
-                mode.message = 'No name entered'
-                mode.showMessage('No name entered')
-                mode.name = mode.getUserInput('Enter name: ')
-            mode.highScores[mode.name] = mode.totalTime
-            mode.appStarted()
-            mode.app.setActiveMode(mode.app.lbMode)
-        for platform in mode.platforms:
-            if platform[0] == 'river':
-                for index in range(len(platform[1])):
-                    for x in range(2):
-                        platform[1][index][x] += 2
-    
     # make bunny walk
     def walk(mode):
         if mode.platY % (75.5/2) == 0:
@@ -153,32 +161,6 @@ class crossyMode(Mode):
             mode.isJumping = False
             mode.miiVel = 7.5
             mode.miiMass = 1
-    
-    def mousePressed(mode, event):
-        print(event.x, event.y)
-        if (mode.bx1 <= event.x <= mode.bx2 and mode.by1 <= event.y <= mode.by2):
-            mode.app.setActiveMode(mode.app.splashMode)
-        if (mode.rx1 <= event.x <= mode.rx2 and mode.ry1 <= event.y <= mode.ry2):
-            mode.appStarted()
-    
-    def drawTimer(mode, canvas):
-        tx1, ty1 = mode.width - 200, 20
-        tx2, ty2 = mode.width - 20, 80
-        canvas.create_rectangle(tx1, ty1, tx2, ty2, fill = 'pink')
-        canvas.create_text((tx1 + tx2)/2 + 20, (ty1 + ty2)/2, text = f'{mode.totalTime}',
-                                font = 'Arial 30 bold')
-        canvas.create_image((tx1 + tx2)/2 - 40, (ty1 + ty2)/2,
-                             image=ImageTk.PhotoImage(mode.timerImage1))
-    
-    def generateLogs(mode):
-        for platform in mode.platforms:
-            if platform != None and platform[0] == 'river' and platform[1] == []:
-                platform[1] = [None]*15
-                x = -500 
-                for index in range(len(platform[1])):
-                    logDist = random.randint(3, 5)
-                    x += logDist * 100
-                    platform[1][index] = [x, x + 200]
                     
     def chooseTrees(mode):
         for platform in mode.platforms:
@@ -194,16 +176,6 @@ class crossyMode(Mode):
                     else:
                         mode.treeLocations[locations2] = True
                 platform[1] = mode.treeLocations
-    
-    def makeCars(mode):
-        for platform in mode.platforms:
-            if platform != None and platform[0] == 'road' and platform[1] == []:
-                platform[1] = [None]*4
-                x = -500
-                for index in range(len(platform[1])):
-                    logDist = random.randint(3, 5)
-                    x += logDist * 100
-                    platform[1][index] = [x, x + 200]
     
     def drawGrass(mode, canvas, y, platform, index1):
         mode.chooseTrees()
@@ -230,8 +202,54 @@ class crossyMode(Mode):
     def drawSand(mode, canvas, y):
         canvas.create_rectangle(0, y - mode.height/10, mode.width, y, fill = 'tan', outline = 'tan')
     
-    def drawRoad(mode, canvas, y):
+    def makeCars(mode):
+        for platform in mode.platforms:
+            if platform != None and platform[0] == 'road' and platform[1] == []:
+                platform[1] = [None]*7
+                x = -200
+                for index in range(len(platform[1])):
+                    carDist = random.randint(2, 4)
+                    x += carDist * 100
+                    carColor = random.randint(0,2)
+                    platform[1][index] = [x, mode.cars[carColor]]
+    
+    def moveCars(mode):
+        for platform in mode.platforms:
+            if platform[0] == 'road':
+                for index in range(len(platform[1])):
+                    platform[1][index][0] -= 4
+                    if platform[1][index][0] < -50:
+                        platform[1].pop(0)
+                        carColor = random.randint(0,2)
+                        platform[1].append([2200, mode.cars[carColor]]) 
+    
+    def drawRoad(mode, canvas, y, platform):
+        mode.makeCars()
         canvas.create_rectangle(0, y - mode.height/10, mode.width, y, fill = 'gray', outline = 'gray')
+        y1 = (y - mode.height/10 + y)/2
+        # draw logs in grass
+        for car in platform[1]:
+            canvas.create_image(car[0], y1 - 20, image=ImageTk.PhotoImage(car[1]))
+    
+    def generateLogs(mode):
+        for platform in mode.platforms:
+            if platform != None and platform[0] == 'river' and platform[1] == []:
+                platform[1] = [None]*15
+                x = -500 
+                for index in range(len(platform[1])):
+                    logDist = random.randint(3, 5)
+                    x += logDist * 100
+                    platform[1][index] = [x, x + 200]
+    
+    def moveLog(mode):
+        for platform in mode.platforms:
+            if platform[0] == 'river':
+                for index in range(len(platform[1])):
+                    for x in range(2):
+                        platform[1][index][x] += 2
+                    if platform[1][index][0] > mode.width:
+                        platform[1].pop()
+                        platform[1].insert(0, [-500, -300]) 
     
     def drawRiver(mode, canvas, y, platform):
         mode.generateLogs()
@@ -258,11 +276,22 @@ class crossyMode(Mode):
                 crossyMode.drawRoad(mode, canvas, y + mode.platY)
             elif platform == 'lava':
                 crossyMode.drawLava(mode, canvas, y + mode.platY, index)
+            elif platform[0] == 'road':
+                crossyMode.drawRoad(mode, canvas, y + mode.platY, platform)
             elif platform[0] == 'river':
                 crossyMode.drawRiver(mode, canvas, y + mode.platY, platform)
             elif platform[0] == 'grass':
                 crossyMode.drawGrass(mode, canvas, y + mode.platY, platform, len(mode.platforms) - index - 1)
             y += mode.height/10
+    
+    def drawTimer(mode, canvas):
+        tx1, ty1 = mode.width - 200, 20
+        tx2, ty2 = mode.width - 20, 80
+        canvas.create_rectangle(tx1, ty1, tx2, ty2, fill = 'pink')
+        canvas.create_text((tx1 + tx2)/2 + 20, (ty1 + ty2)/2, text = f'{mode.totalTime}',
+                                font = 'Arial 30 bold')
+        canvas.create_image((tx1 + tx2)/2 - 40, (ty1 + ty2)/2,
+                             image=ImageTk.PhotoImage(mode.timerImage1))
 
     def redrawAll(mode, canvas):
         # platform
