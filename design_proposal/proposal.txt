@@ -1,0 +1,31 @@
+Project Description: Video Controlled 2D Crossy Road
+My project is similar to Crossy Road, where the user has to navigate themselves 
+across multiple platforms and reach a finish line. My project uses video 
+input to determine when the user is walking or jumping.
+
+Competitive Analysis: The project is based off the game Crossy Road and 
+Wii Fit Obstacle Course, so it is very similar to typical runner and
+movement games. A normal Wii Fit game requires a Wii Fit board to detect user input; 
+however, my project uses camera detection to figure out which way the user wants
+to move, so the user gets exercise while playing a fun game. There are many 
+similar games and competitors, but none of them utilize video detection.
+
+Structural Plan: There will be separate files for the splash screen, map/game, 
+camera input, and scores/leaderboard. The file set ups will follow MVP guidelines 
+and will consist of model, view, and control functions.
+
+Algorithmic Plan: First, the user will change movement based on what surface they 
+are walking on. For example, when walking on ice, there will be reduced friction 
+and each step will lead to a slide. This can be done by analyzing the resistance of
+each surface. Second, the logs in the water will have water resistance to reflect
+real life circumstances. Lastly, the game will analyze how the user plays and
+throw challenges that the user struggles with the most to the test their
+abilities by keeping track of previous fails and adjusting the future map.
+
+Timeline Plan: I plan to finish the keyboard controlled game by TP2 and 
+add on camera detection features by TP3.
+
+Version Control Plan: I am using github to store and keep track of my code. 
+(picture included in folder)
+
+Module List: OpenCV and Leap Motion to track video input movement.

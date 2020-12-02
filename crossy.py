@@ -1,5 +1,6 @@
 # NEW VERSION
 
+import random
 from cmu_112_graphics import *
 # game mode
 class crossyMode(Mode):
@@ -7,23 +8,29 @@ class crossyMode(Mode):
         # character
         mode.oldsprite = mode.loadImage('images/molang.png')
         imageWidth, imageHeight = mode.oldsprite.size
-        mode.bunny = mode.loadImage('images/tonton.gif')
-        bunWidth, bunHeight = mode.bunny.size
-        # mode.sprite = mode.scaleImage(mode.bunny, imageHeight/bunHeight)
-        mode.sprite = mode.scaleImage(mode.oldsprite, 75.5/imageHeight)
+        mode.sprite = mode.scaleImage(mode.oldsprite, .5)
         # mii character info
         mode.miiX = mode.width/2
-        mode.miiY = mode.height*7.5/10
+        mode.miiY = mode.height*8/10
         mode.isJumping = False
         mode.isWalking = False
-        mode.isFalling = False
         mode.miiVel = 7.5
         mode.miiMass = 1
         mode.hasMoved = False
         # platforms
         mode.resetPlatforms()
-        # obstacles
-        mode.obstacles = None
+        mode.nextPlat = None
+        # road and cars
+        mode.redcar1 = mode.loadImage('images/redcar')
+        mode.redcar2 = mode.redcar1.transpose(Image.FLIP_LEFT_RIGHT)
+        mode.redcar = mode.scaleImage(mode.redcar2, .5)
+        mode.bcar1 = mode.loadImage('images/bcar')
+        mode.bcar = mode.scaleImage(mode.bcar1, .5)
+        mode.gcar1 = mode.loadImage('images/gcar')
+        mode.gcar = mode.scaleImage(mode.gcar1, .5)
+        mode.cars = [mode.redcar, mode.bcar, mode.gcar]
+        # background pictures
+        mode.backgroundPics()
         # back button
         mode.bx1, mode.by1 = 20, 20
         mode.bx2, mode.by2 = 120, 50
@@ -41,52 +48,72 @@ class crossyMode(Mode):
         mode.name = None
         mode.highScores = {'Michelle': 100}
     
+    def backgroundPics(mode):
+        # https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pngitem.com%2Fmiddle%2FhTbmTb_life-clipart-colorful-tree-transparent-background-tree-clipart%2F&psig=AOvVaw13JaeiR3H6uoCgNc0NZDWT&ust=1606890271306000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCNjHjveSrO0CFQAAAAAdAAAAABAa
+        mode.tree1 = mode.loadImage('images/tree.png')
+        mode.tree = mode.scaleImage(mode.tree1, .1)
+    
     def resetPlatforms(mode):
-        mode.platforms = [('start', 200, 'black'), ('ground', 400, 'light green'), 
-                          ('ground', 50, 'white'), ('ground', 100, 'pink'), 
-                          ('gap', 100, None), ('ground', 300, 'light green'), 
-                          ('ground', 100, 'pink'), ('gap', 100, None), 
-                          ('finish', 200, 'black')
-                          ]
-        mode.platcoords = [None] * len(mode.platforms)
-        mode.boxsize = 800
-        mode.platX = mode.width/2
-        mode.platY = 1600
-        # reset time
+        platOptions = [['grass', []], 'ice', 'sand', ['road', []], ['river', []], 'lava']
+        mode.platforms = [['grass', []]] + [['grass', []]] + [['grass', []]] + [None]*8
+        mode.chooseTrees()
+        index = 3
+        while index < len(mode.platforms):
+            num = random.randint(0, 5)
+            mode.platforms[index] = platOptions[num]
+            if index < 10 and mode.platforms[index] == 'ice':
+                mode.platforms[index + 1] = 'ice'
+                index += 1
+            index +=1 
+        mode.platY = 0
         mode.totalTime = 60
         mode.endTime = None
 
     def keyPressed(mode, event):
         if event.key == 'Space' or event.key == 'Up':
             mode.hasMoved = True
-        if mode.isJumping == False:
+        if mode.isJumping == False and mode.isWalking == False:
             if event.key == "Space":
                 mode.isJumping = True
             elif event.key == "Up":
                 mode.isWalking = True
-                mode.platY = mode.boxsize*2
-                mode.boxsize += mode.boxsize/20
+    
+    def generatePlatform(mode):
+        platOptions = [['grass', []], 'ice', 'sand', ['road', []], ['river', []], 'lava']
+        if mode.platY % (mode.height/10) == 0:
+            mode.platY = 0
+            mode.platforms.pop(0)
+            num = random.randint(0, 5)
+            if mode.nextPlat != None:
+                num = 1
+                mode.nextPlat = None
+                mode.platforms.append(platOptions[num])
+            elif platOptions[num] == 'ice':
+                mode.nextPlat = 'ice'
+                mode.platforms.append(platOptions[num])
+            elif platOptions[num] != 'lava':
+                mode.platforms.append(platOptions[num])
+            elif platOptions[num] == 'lava' and mode.platforms[-1] != 'lava':
+                mode.platforms.append(platOptions[num])
+            else:
+                mode.platforms.append(platOptions[0])
 
     def timerFired(mode):
         if mode.totalTime == 0:
             mode.isFinished = True
             mode.endTime = mode.totalTime
         if mode.isJumping:
+            mode.platY += 75.5/8
+            mode.generatePlatform()
             mode.jump()
-            mode.boxsize += mode.boxsize/20
-            mode.platY = mode.boxsize*2
-            print(mode.boxsize, mode.platY)
         if mode.isWalking:
-            mode.walk() 
+            mode.platY += 75.5/8
+            mode.generatePlatform()
+            mode.walk()
         if mode.hasMoved:
             mode.timerFiredTime -= 1
-            if mode.timerFiredTime % 20 == 0:
+            if mode.timerFiredTime % 50 == 0:
                 mode.totalTime -= 1
-        if mode.platcoords[-1] != None:
-            (x1, y1, x2, y2, x3, y3, x4, y4) = mode.platcoords[-1]
-            print((x1, y1, x2, y2, x3, y3, x4, y4))
-            if not(mode.isJumping) and x1 <= 610 <= x3 and y4 <= 610 <= y2: # 610 y for molang, 626 bunny
-                mode.isFinished = True
         if mode.isFinished:
             mode.name = mode.getUserInput('Enter name to save score: ')
             while (mode.name == ''):
@@ -98,25 +125,18 @@ class crossyMode(Mode):
             mode.highScores[mode.name] = mode.totalTime
             mode.appStarted()
             mode.app.setActiveMode(mode.app.lbMode)
-        mode.onGround()
-        if mode.isFalling:
-            mode.resetPlatforms()
-            mode.isFalling = False
-    
-    # check if bunny on ground
-    def onGround(mode):
-        if mode.platcoords != ([None] * len(mode.platforms)):
-            for platform in mode.platcoords:
-                if platform != None:
-                    (x1, y1, x2, y2, x3, y3, x4, y4) = platform
-                    if mode.isJumping or x1 <= 610 <= x4 and y1 <= 610 <= y3:
-                        return 
-            mode.isFalling = True
+        for platform in mode.platforms:
+            if platform[0] == 'river':
+                for index in range(len(platform[1])):
+                    for x in range(2):
+                        platform[1][index][x] += 2
     
     # make bunny walk
     def walk(mode):
-        mode.sprite = mode.sprite.transpose(Image.FLIP_LEFT_RIGHT)
-        mode.isWalking = False
+        if mode.platY % (75.5/2) == 0:
+            mode.sprite = mode.sprite.transpose(Image.FLIP_LEFT_RIGHT)
+        if mode.platY % 75.5 == 0:
+            mode.isWalking = False
 
     # make bunny jump
     def jump(mode):
@@ -141,82 +161,6 @@ class crossyMode(Mode):
         if (mode.rx1 <= event.x <= mode.rx2 and mode.ry1 <= event.y <= mode.ry2):
             mode.appStarted()
     
-    # draw obstacle
-    def drawObstacle(mode, canvas):
-        pass
-    
-    # draw platform
-    def drawPlatform(mode, canvas):
-        # platform width = 400, lenght = 200, height = 3
-        # (200, 100, 3) (-200, 100, 3)
-        # https://github.com/novel-yet-trivial/Tkinter3DExperiment/blob/28e59802d1e602d8a6b3f201bf36052364669ff5/OnePointPerspectiveCube.py
-        mode.y = mode.platY
-        mode.x = mode.platX 
-        boxsize = mode.boxsize
-        half_width = mode.width / 2
-        half_height = mode.height / 2
-        dy = 0
-        x1 = mode.x-boxsize
-        y1 = mode.y-boxsize
-        x2 = mode.x+boxsize
-        y2 = mode.y+boxsize
-        x3 = (half_width+x1)/2
-        y3 = (half_height+y2)/2
-        x4 = (half_width+x1+boxsize*2)/2
-        y4 = (half_height+y2)/2
-        x5 = (half_width+x1)/2 
-        y5 = (half_height+y1)/2
-        x6 = (half_width+x1)/2
-        y6 = (half_height+y2)/2
-        x7 = (half_width+x1+boxsize*2)/2
-        y7 = (half_height+y1)/2
-        botrightX = x1+boxsize*2
-        for index in range(len(mode.platforms)):
-            platform = mode.platforms[index]
-            if platform[0] != 'gap':
-                # canvas.create_polygon(x2,y2,x1+boxsize*2,y1,x7,y7, x4, y4, fill = 'orange')
-                # canvas.create_polygon(x5, y5, x6, y6, x2 - boxsize*2, y2, x1, y1, fill = 'blue')
-                # canvas.create_polygon(x3, y3, x4, y4, x2, y2, x2 - boxsize*2, y2, fill = 'pink', outline = 'black')
-                canvas.create_polygon(x5, y5, x1, y1, botrightX, y1, x7, y7, fill = platform[2])
-                mode.platcoords[index] = (x5, y5, x1, y1, botrightX, y1, x7, y7) # top left bot left bot right top right
-            if platform[0] == 'start':
-                canvas.create_text((x5 + x7)/2, (y5 + y1)/2, 
-                                    text = 'START', font = 'Arial 30 bold', fill = 'white')
-            if platform[0] == 'finish':
-                canvas.create_text((x1 + x2)/2, (y1 + y3)/2, 
-                                    text = 'FINISH', font = 'Arial 30 bold', fill = 'white')
-            x1 = x5
-            y1 = y5
-            botrightX = x7
-            y1 = y7
-            x5 = (half_width+x1)/2
-            y5 = (half_height+y1)/2
-            x7 = (half_width+botrightX)/2
-            y7 = (half_height+y1)/2
-
-            
-        '''
-        curY = 0
-        width = 800
-        for index in range(len(mode.platforms)):
-            platform = mode.platforms[index]
-            if platform[0] != 'gap':
-                x1, y1 = mode.width/2 - width - mode.platY, mode.height - curY + mode.platY  # bottom left
-                x2, y2 = mode.width/2 + width + mode.platY, mode.height - curY + mode.platY  # bottom right
-                x3, y3 = mode.width/2 + width/3 + mode.platY, mode.height - platform[1] - curY + mode.platY  # top right
-                x4, y4 = mode.width/2 - width/3 - mode.platY, mode.height - platform[1] - curY + mode.platY  # top left
-                canvas.create_polygon(x1, y1, x2, y2, x3, y3, x4, y4, fill = platform[2])
-                mode.platcoords[index] = (x1, y1, x2, y2, x3, y3, x4, y4)
-            if platform[0] == 'start':
-                canvas.create_text((x1 + x2)/2, (y1 + y3)/2, 
-                                    text = 'START', font = 'Arial 30 bold', fill = 'white')
-            if platform[0] == 'finish':
-                canvas.create_text((x1 + x2)/2, (y1 + y3)/2, 
-                                    text = 'FINISH', font = 'Arial 30 bold', fill = 'white')
-            curY += platform[1]
-            width = width/3
-        '''
-    
     def drawTimer(mode, canvas):
         tx1, ty1 = mode.width - 200, 20
         tx2, ty2 = mode.width - 20, 80
@@ -225,10 +169,104 @@ class crossyMode(Mode):
                                 font = 'Arial 30 bold')
         canvas.create_image((tx1 + tx2)/2 - 40, (ty1 + ty2)/2,
                              image=ImageTk.PhotoImage(mode.timerImage1))
+    
+    def generateLogs(mode):
+        for platform in mode.platforms:
+            if platform != None and platform[0] == 'river' and platform[1] == []:
+                platform[1] = [None]*15
+                x = -500 
+                for index in range(len(platform[1])):
+                    logDist = random.randint(3, 5)
+                    x += logDist * 100
+                    platform[1][index] = [x, x + 200]
+                    
+    def chooseTrees(mode):
+        for platform in mode.platforms:
+            if platform != None and platform[0] == 'grass' and platform[1] == []:
+                numTrees = random.randint(1, 5)
+                mode.treeLocations = [None]*16
+                for tree in range(numTrees):
+                    locations = random.randint(0, 5)
+                    locations2 = random.randint(10, 15)
+                    side = random.randint(0, 1)
+                    if side == 0:
+                        mode.treeLocations[locations] = True
+                    else:
+                        mode.treeLocations[locations2] = True
+                platform[1] = mode.treeLocations
+    
+    def makeCars(mode):
+        for platform in mode.platforms:
+            if platform != None and platform[0] == 'road' and platform[1] == []:
+                platform[1] = [None]*4
+                x = -500
+                for index in range(len(platform[1])):
+                    logDist = random.randint(3, 5)
+                    x += logDist * 100
+                    platform[1][index] = [x, x + 200]
+    
+    def drawGrass(mode, canvas, y, platform, index1):
+        mode.chooseTrees()
+        canvas.create_rectangle(0, y - mode.height/10, mode.width, y, 
+                            fill = '#9fe04f', width = 0)
+        if mode.platforms[index1 - 1][0] != 'grass':
+            canvas.create_rectangle(0, y - 10, mode.width, y, 
+                                fill = '#6b5e48', width = 0)
+        # draw trees on grass
+        for index in range(len(platform[1])):
+            if platform[1][index] == True:
+                canvas.create_image(mode.width * index / 16.3 + 16.3, y - 60, 
+                                    image=ImageTk.PhotoImage(mode.tree)) 
+    
+    def drawIce(mode, canvas, y, index1):
+        canvas.create_rectangle(0, y - mode.height/10, mode.width, y, fill = 'light blue', outline = 'light blue')
+        for x1 in range(0, mode.width, 30):
+            for y1 in range(int(y - mode.height/10), int(y), 30):
+                canvas.create_polygon(x1, y1, x1 + 2, y1, x1 + 20, y1 + 20, x1 + 20, y1 + 18, fill = 'white')
+        if mode.platforms[index1 - 1] != 'ice':
+            canvas.create_rectangle(0, y - 10, mode.width, y, 
+                                fill = '#5bc0eb', width = 0)
+    
+    def drawSand(mode, canvas, y):
+        canvas.create_rectangle(0, y - mode.height/10, mode.width, y, fill = 'tan', outline = 'tan')
+    
+    def drawRoad(mode, canvas, y):
+        canvas.create_rectangle(0, y - mode.height/10, mode.width, y, fill = 'gray', outline = 'gray')
+    
+    def drawRiver(mode, canvas, y, platform):
+        mode.generateLogs()
+        canvas.create_rectangle(0, y - mode.height/10, mode.width, y, fill = '#4bb9de', outline = '#4bb9de')
+        y1 = (y - mode.height/10 + y)/2
+        # draw logs in grass
+        for log in platform[1]:
+            x1, x2 = log
+            canvas.create_rectangle(x1, y1 - 20, x2, y1 + 20, fill = 'brown', outline = 'brown')  
+    
+    def drawLava(mode, canvas, y, index):
+        canvas.create_rectangle(0, y - mode.height/10, mode.width, y, fill = 'red', outline = 'red')
+
+    def drawPlatforms(mode, canvas):
+        y = 0
+        index = 0
+        for index in range(len(mode.platforms)):
+            platform = list(reversed(mode.platforms))[index]
+            if platform == 'ice':
+                crossyMode.drawIce(mode, canvas, y + mode.platY, len(mode.platforms) - index - 1)
+            elif platform == 'sand':
+                crossyMode.drawSand(mode, canvas, y + mode.platY)
+            elif platform == 'road':
+                crossyMode.drawRoad(mode, canvas, y + mode.platY)
+            elif platform == 'lava':
+                crossyMode.drawLava(mode, canvas, y + mode.platY, index)
+            elif platform[0] == 'river':
+                crossyMode.drawRiver(mode, canvas, y + mode.platY, platform)
+            elif platform[0] == 'grass':
+                crossyMode.drawGrass(mode, canvas, y + mode.platY, platform, len(mode.platforms) - index - 1)
+            y += mode.height/10
 
     def redrawAll(mode, canvas):
         # platform
-        mode.drawPlatform(canvas)
+        crossyMode.drawPlatforms(mode, canvas)
         # draw character
         canvas.create_image(mode.miiX, mode.miiY, image=ImageTk.PhotoImage(mode.sprite))
         # back button
@@ -239,5 +277,3 @@ class crossyMode(Mode):
         canvas.create_text((mode.rx1 + mode.rx2)/2, (mode.ry1 + mode.ry2)/2, text = 'RESET')
         # draw timer
         mode.drawTimer(canvas)
-        if mode.isFalling:
-            canvas.create_text(mode.width/2, mode.height/2, text = 'YOU FELL', font = 'Arial 30 bold')
