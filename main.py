@@ -26,7 +26,7 @@ class splashMode(Mode):
     def redrawAll(mode, canvas):
         # bkg clouds
         canvas.create_image(mode.width/2, mode.height/2, image=ImageTk.PhotoImage(mode.bgImage1))
-        canvas.create_text(mode.width/2, mode.height/4, text = 'wii fit obstacle course',
+        canvas.create_text(mode.width/2, mode.height/4, text = 'bunny run',
                             font = 'System 100 bold')
         # start button
         canvas.create_rectangle(mode.bx1, mode.by1, mode.bx2, mode.by2, fill = 'pink')
