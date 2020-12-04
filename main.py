@@ -46,7 +46,7 @@ class splashMode(Mode):
             mode.app.setActiveMode(mode.app.crossyMode)
         if (mode.lx1 >= event.x >= mode.lx2 and mode.ly1 <= event.y <= mode.ly2):
             mode.app.setActiveMode(mode.app.lbMode)
-        if (mode.ox1 >= event.x >= mode.ox2 and mode.oy1 <= event.y <= mode.oy2):
+        if (mode.ox1 <= event.x <= mode.ox2 and mode.oy1 <= event.y <= mode.oy2):
             mode.app.setActiveMode(mode.app.gameMode)
 
 # from http://www.cs.cmu.edu/~112/notes/notes-animations-part3.html#subclassingModalApp
@@ -60,3 +60,4 @@ class MyModalApp(ModalApp):
         app.timerDelay = 20
 
 MyModalApp(width=1234, height=755)
+ 
