@@ -34,6 +34,7 @@ class crossyMode(Mode):
         mode.facingRight = False
         mode.jumpsLeft = 3
         mode.onLog = False
+        mode.miiVelocity = mode.height/10/8
         # evil bunny info
         mode.evilX = mode.width/2 - mode.height/10
         mode.evilY = mode.height*8/10
@@ -46,6 +47,7 @@ class crossyMode(Mode):
         mode.EMass = 1
         mode.EhasMoved = False
         mode.EfacingRight = False
+        mode.EonLog = False
         # platforms
         mode.resetPlatforms()
         mode.nextPlat = None
@@ -77,6 +79,9 @@ class crossyMode(Mode):
         mode.score = 0
         mode.name = None
         mode.highScores = {'Michelle': 100}
+        # friction
+        mode.frictionCoeff = {'ice': .03, 'sand': .4, 'grass': .35}
+        mode.frictionForce = 0
     
     def backgroundPics(mode):
         # https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pngitem.com%2Fmiddle%2FhTbmTb_life-clipart-colorful-tree-transparent-background-tree-clipart%2F&psig=AOvVaw13JaeiR3H6uoCgNc0NZDWT&ust=1606890271306000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCNjHjveSrO0CFQAAAAAdAAAAABAa
@@ -111,76 +116,85 @@ class crossyMode(Mode):
                 mode.wentBackward = False
                 mode.jumpsLeft -= 1
                 mode.isJumping = True
-            elif event.key == "Up":
+            if event.key == "Up":
+                if mode.onLog:
+                    mode.onLog = False
                 mode.wentBackward = False
                 mode.isWalking = True
-            elif event.key == 'Down':
-                if mode.wentBackward == 0:
+            if event.key == 'Down':
+                if mode.wentBackward == False:
+                    if mode.onLog:
+                        mode.onLog = False
                     mode.wentBackward = True
                     mode.isBackward = True
-            elif event.key == 'Right' and not(mode.onLog):
+            if event.key == 'Right' and not(mode.onLog):
                 mode.goRight = True
                 if not(mode.facingRight):
                     mode.sprite = mode.sprite.transpose(Image.FLIP_LEFT_RIGHT)
-            elif event.key == 'Left' and not(mode.onLog):
+            if event.key == 'Left' and not(mode.onLog):
                 mode.goLeft = True
                 if mode.facingRight:
                     mode.sprite = mode.sprite.transpose(Image.FLIP_LEFT_RIGHT)
         if mode.EWalking == False:
             if event.key == "w" or event.key == "W":
                 mode.EwentBackward = False
+                if mode.EonLog:
+                    mode.EonLog = False
                 mode.EWalking = True
-            elif event.key == "s" or event.key == "S":
+            if event.key == "s" or event.key == "S":
                 if mode.EwentBackward == 0:
+                    if mode.EonLog:
+                        mode.EonLog = False
                     mode.EwentBackward = True
                     mode.EBackward = True
-            elif event.key == "d" or event.key == "D":
+            if (event.key == "d" or event.key == "D") and not(mode.EonLog):
                 mode.EgoRight = True
                 if not(mode.EfacingRight):
                     mode.evilBunny = mode.evilBunny.transpose(Image.FLIP_LEFT_RIGHT)
                     mode.EfacingRight = not(mode.EfacingRight)
-            elif event.key == "a" or event.key == "A":
+            if (event.key == "a" or event.key == "A") and not(mode.EonLog):
                 mode.EgoLeft = True
                 if mode.EfacingRight:
                     mode.evilBunny = mode.evilBunny.transpose(Image.FLIP_LEFT_RIGHT)
                     mode.EfacingRight = not(mode.EfacingRight)
     
     def timerFired(mode):
+        mode.calculateForce()
         mode.bunnyX = (mode.miiX - mode.width/2) / 75.5
         mode.checkFinish()
         mode.moveOnLog()
         if mode.fellInLava or mode.fellInWater or mode.hitByCar:
             mode.isFinished = True
-        if mode.isJumping:
+        elif mode.isJumping:
             mode.platY += 75.5/8
             mode.evilY += 75.5/8 
             mode.generatePlatform()
             mode.jump()
-        if mode.isWalking:
+        elif mode.isWalking:
             mode.platY += 75.5/8
             mode.evilY += 75.5/8
             mode.generatePlatform()
             mode.walk()
-        if mode.isBackward:
+        elif mode.isBackward:
             mode.platY -= 75.5/8
             mode.evilY -= 75.5/8
             mode.walkBackward()
-        if mode.goRight:
+        elif mode.goRight:
             mode.miiX += 75.5/8
             mode.moveRight()
-        if mode.goLeft:
+        elif mode.goLeft:
             mode.miiX -= 75.5/8
             mode.moveLeft()
-        if mode.EWalking:
+        elif mode.EWalking:
             mode.evilY -= 75.5/8
             mode.Ewalk()
-        if mode.EBackward:
+        elif mode.EBackward:
             mode.evilY += 75.5/8
             mode.EwalkBackward()
-        if mode.EgoRight:
+        elif mode.EgoRight:
             mode.evilX += 75.5/8
             mode.EmoveRight()
-        if mode.EgoLeft:
+        elif mode.EgoLeft:
             mode.evilX -= 75.5/8
             mode.EmoveLeft()
         if mode.isFinished:
@@ -227,6 +241,27 @@ class crossyMode(Mode):
                 mode.platforms.append(platOptions[num])
             else:
                 mode.platforms.append(platOptions[0])
+    
+    # find speed which object moves based on platform friction
+    def calculateForce(mode):
+        # kinetic friction equation:
+        # friction force = friction coeff * normal force
+        # no force: velocity = 75.5/8 pixels per 1 timer fired
+        if mode.isWalking:
+            platform = mode.platforms[2]
+            if platform == 'ice' or platform == 'sand' or platform[0] == 'grass':
+                if platform[0] == 'grass':
+                    platform = 'grass'
+                gravity = 9.8
+                normalForce = abs(mode.miiMass) * 9.8
+                kineticFrictionCoeff = mode.frictionCoeff[platform]
+                mode.frictionForce = kineticFrictionCoeff * normalForce
+                print('fric=', mode.frictionForce)
+                force = abs(mode.miiMass) * 75.5/8/1
+                acceleration = (force - mode.frictionForce)/abs(mode.miiMass)
+                mode.miiVelocity = acceleration * 1
+                print(mode.miiVelocity)
+
 
     # check if the player lost
     def checkFinish(mode):
@@ -246,6 +281,21 @@ class crossyMode(Mode):
             for car in platform[1]:
                 if (car[0] - mode.carWidth/2) <= mode.miiX <= (car[0] + mode.carWidth/2):
                     mode.hitByCar = True
+        # check for evil bunny
+        location = (mode.height*9/10 - mode.evilY)/75.5 + 1
+        if location % 1 == 0 and 0 <= location < len(mode.platforms):
+            evilPlatform = mode.platforms[int(location)]
+            if evilPlatform == 'ice' or evilPlatform == 'sand' or evilPlatform == 'grass':
+                pass
+            elif evilPlatform[0] == 'river' and mode.EonLog == False and mode.isWalking == False:
+                for log in evilPlatform[1]:
+                    if (log[0] <= mode.evilX <= log[1]):
+                        return
+                mode.isFinished = True
+            elif evilPlatform[0] == 'road':
+                for car in evilPlatform[1]:
+                    if (car[0] - mode.carWidth/2) <= mode.evilX <= (car[0] + mode.carWidth/2):
+                        mode.isFinished = True
                 
     # make bunny walk
     def walk(mode):
@@ -254,14 +304,14 @@ class crossyMode(Mode):
             mode.facingRight = not(mode.facingRight)
         dist = abs((mode.miiX) - mode.width/2) % 75.5
         if dist != 0:
-            if ((mode.miiX) - mode.width/2) >= 0:
+            if (mode.miiX) - mode.width/2 > 0:
                 if dist < 75.5/2:
                     mode.miiX -= dist
                 else:
-                    mode.miiX += dist
+                    mode.miiX += (75.5 - dist)
             else:
                 if dist < 75.5/2:
-                    mode.miiX += (75.5 - dist)
+                    mode.miiX += dist
                 else:
                     mode.miiX -= (75.5 - dist)
         if mode.platY % 75.5 == 0:
@@ -310,8 +360,21 @@ class crossyMode(Mode):
         if mode.evilY % (75.5/2) == 0:
             mode.evilBunny = mode.evilBunny.transpose(Image.FLIP_LEFT_RIGHT)
             mode.EfacingRight = not(mode.EfacingRight)
+        dist = abs((mode.evilX) - mode.width/2) % 75.5
+        if (mode.evilX) - mode.width/2 > 0:
+                if dist < 75.5/2:
+                    mode.evilX -= dist
+                else:
+                    mode.evilX += (75.5 - dist)
+        else:
+            if dist < 75.5/2:
+                mode.evilX += dist
+            else:
+                mode.evilX -= (75.5 - dist)
         if mode.evilY % 75.5 == 0:
             mode.EWalking = False
+            if mode.EonLog:
+                mode.EonLog = False      
     
     # make evil bunny walk backward
     def EwalkBackward(mode):
@@ -337,6 +400,16 @@ class crossyMode(Mode):
                 if (log[0] <= mode.miiX <= log[1]):
                     mode.onLog = True
                     mode.miiX += 2
+        # check if evil bunny is on a log
+        location = int((mode.height*9/10 - mode.evilY)/75.5 + 1)
+        if location % 1 == 0 and 0 <= location < len(mode.platforms):
+            evilPlatform = mode.platforms[int(location)]
+            if evilPlatform[0] == 'river':
+                for log in evilPlatform[1]:
+                    if (log[0] <= mode.evilX <= log[1]):
+                        mode.EonLog = True
+        if mode.EonLog:
+            mode.evilX += 2
                     
     def chooseTrees(mode):
         for platform in mode.platforms:
