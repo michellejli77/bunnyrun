@@ -656,6 +656,7 @@ class crossyMode(Mode):
 
     def evilAlgorithm(mode):
         mode.onRoad = False
+        mode.onRiver = False
         locExist = False
         if mode.evilAI:
             location = (mode.height*9/10 - mode.evilY)/75.5 + 1
@@ -663,11 +664,13 @@ class crossyMode(Mode):
                 evilPlatform = mode.platforms[int(location)]
                 nextPlat = mode.platforms[int(location) + 1]
                 locExist = True
-            if mode.onRoad:
+            if mode.onRoad or mode.onRiver:
                 mode.EWalking = True
                 mode.onRoad = False
+                mode.onRiver = False
             if (not(mode.isWalking) and not(mode.isBackward)) and locExist:
-                if ((nextPlat[0] == 'grass' or nextPlat == 'ice' or nextPlat == 'sand')
+                if ((nextPlat[0] == 'grass' or nextPlat == 'ice' or nextPlat == 'sand'
+                    or nextPlat[0] == 'lava')
                     and (mode.seconds % 3 == 0)):
                     mode.EwentBackward = False
                     if mode.EonLog:
@@ -681,4 +684,12 @@ class crossyMode(Mode):
                         mode.platforms[int(location) + 2] == 'ice' or mode.platforms[int(location) + 2] == 'sand'):
                         mode.EWalking = True
                         mode.onRoad = True
+                elif nextPlat[0] == 'river':
+                    for log in nextPlat[1]:
+                        if (log[0] <= mode.evilX <= log[1]):
+                            return
+                    if (mode.platforms[int(location) + 2][0] == 'grass' or 
+                        mode.platforms[int(location) + 2] == 'ice' or mode.platforms[int(location) + 2] == 'sand'):
+                        mode.EWalking = True
+                        mode.onRiver = True
 
