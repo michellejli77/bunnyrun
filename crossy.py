@@ -2,6 +2,7 @@
 # good bunny has limited number of jumps
 
 # NEW VERSION
+import time
 import copy
 import random
 from cmu_112_graphics import *
@@ -34,7 +35,7 @@ class crossyMode(Mode):
         mode.facingRight = False
         mode.jumpsLeft = 3
         mode.onLog = False
-        mode.miiVelocity = mode.height/10/8
+        mode.miiSpeed = 75.5/8
         # evil bunny info
         mode.evilX = mode.width/2 - mode.height/10
         mode.evilY = mode.height*8/10
@@ -48,6 +49,7 @@ class crossyMode(Mode):
         mode.EhasMoved = False
         mode.EfacingRight = False
         mode.EonLog = False
+        mode.evilAI = False
         # platforms
         mode.resetPlatforms()
         mode.nextPlat = None
@@ -70,6 +72,9 @@ class crossyMode(Mode):
         # restart button
         mode.rx1, mode.ry1 = 140, 20
         mode.rx2, mode.ry2 = 240, 50
+        # evil computer controlled button
+        mode.ex1, mode.ey1 = 20, mode.height - 70
+        mode.ex2, mode.ey2 = 150, mode.height - 20
         # game position
         mode.isFinished = False
         mode.fellInLava = False
@@ -81,7 +86,9 @@ class crossyMode(Mode):
         mode.highScores = {'Michelle': 100}
         # friction
         mode.frictionCoeff = {'ice': .03, 'sand': .4, 'grass': .35}
-        mode.frictionForce = 0
+        # time
+        mode.timerFiredTime = 0
+        mode.seconds = 0
     
     def backgroundPics(mode):
         # https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pngitem.com%2Fmiddle%2FhTbmTb_life-clipart-colorful-tree-transparent-background-tree-clipart%2F&psig=AOvVaw13JaeiR3H6uoCgNc0NZDWT&ust=1606890271306000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCNjHjveSrO0CFQAAAAAdAAAAABAa
@@ -159,6 +166,10 @@ class crossyMode(Mode):
                     mode.EfacingRight = not(mode.EfacingRight)
     
     def timerFired(mode):
+        mode.timerFiredTime += 1
+        if mode.timerFiredTime % 20 == 0:
+            mode.seconds += 1
+        mode.evilAlgorithm()
         mode.calculateForce()
         mode.bunnyX = (mode.miiX - mode.width/2) / 75.5
         mode.checkFinish()
@@ -171,13 +182,27 @@ class crossyMode(Mode):
             mode.generatePlatform()
             mode.jump()
         elif mode.isWalking:
-            mode.platY += 75.5/8
-            mode.evilY += 75.5/8
+            mode.platY += mode.miiSpeed
+            mode.evilY += mode.miiSpeed
+            if mode.miiSpeed != 75.5/8:
+                if 72 < mode.platY < 75.5:
+                    mode.evilY += (75.5 - mode.evilY % 75.5)
+                    mode.platY = 75.5
+                    mode.isWalking = False
+                    if mode.onLog:
+                        mode.onLog = False
             mode.generatePlatform()
             mode.walk()
         elif mode.isBackward:
-            mode.platY -= 75.5/8
-            mode.evilY -= 75.5/8
+            mode.platY -= mode.miiSpeed
+            mode.evilY -= mode.miiSpeed
+            if mode.miiSpeed != 75.5/8:
+                if -75.5 < mode.platY < -72:
+                    mode.evilY -= (mode.evilY % 75.5)
+                    mode.platY = -75.5
+                    mode.isWalking = False
+                    if mode.onLog:
+                        mode.onLog = False
             mode.walkBackward()
         elif mode.goRight:
             mode.miiX += 75.5/8
@@ -185,7 +210,7 @@ class crossyMode(Mode):
         elif mode.goLeft:
             mode.miiX -= 75.5/8
             mode.moveLeft()
-        elif mode.EWalking:
+        if mode.EWalking:
             mode.evilY -= 75.5/8
             mode.Ewalk()
         elif mode.EBackward:
@@ -218,11 +243,14 @@ class crossyMode(Mode):
             mode.app.setActiveMode(mode.app.splashMode)
         if (mode.rx1 <= event.x <= mode.rx2 and mode.ry1 <= event.y <= mode.ry2):
             mode.appStarted()
+        if (mode.ex1 <= event.x <= mode.ex2 and mode.ey1 <= event.y <= mode.ey2):
+            mode.evilAI = not(mode.evilAI)
     
     def generatePlatform(mode):
         platOptions = [['grass', []], 'ice', 'sand', ['road', []], 
                         ['river', []], ['lava', None]]
-        if mode.platY % (mode.height/10) == 0:
+        if (mode.platY % (mode.height/10) == 0 or
+                 (mode.miiSpeed != 75.5/8 and mode.platY > 72)):
             mode.score += 1
             mode.platY = 0
             if mode.wentBackward == False:
@@ -247,21 +275,19 @@ class crossyMode(Mode):
         # kinetic friction equation:
         # friction force = friction coeff * normal force
         # no force: velocity = 75.5/8 pixels per 1 timer fired
-        if mode.isWalking:
-            platform = mode.platforms[2]
-            if platform == 'ice' or platform == 'sand' or platform[0] == 'grass':
-                if platform[0] == 'grass':
-                    platform = 'grass'
-                gravity = 9.8
-                normalForce = abs(mode.miiMass) * 9.8
-                kineticFrictionCoeff = mode.frictionCoeff[platform]
-                mode.frictionForce = kineticFrictionCoeff * normalForce
-                print('fric=', mode.frictionForce)
-                force = abs(mode.miiMass) * 75.5/8/1
-                acceleration = (force - mode.frictionForce)/abs(mode.miiMass)
-                mode.miiVelocity = acceleration * 1
-                print(mode.miiVelocity)
-
+        platform = mode.platforms[3]
+        if platform == 'ice' or platform == 'sand' or platform[0] == 'grass':
+            if platform[0] == 'grass':
+                platform = 'grass'
+            gravity = 9.8
+            normalForce = abs(mode.miiMass) * 9.8
+            kineticFrictionCoeff = mode.frictionCoeff[platform]
+            frictionForce = kineticFrictionCoeff * normalForce
+            force = abs(mode.miiMass) * 75.5/8/1
+            acceleration = (force - frictionForce)/abs(mode.miiMass)
+            mode.miiSpeed = acceleration * 1
+        else:
+            mode.miiSpeed = 75.5/8
 
     # check if the player lost
     def checkFinish(mode):
@@ -559,6 +585,17 @@ class crossyMode(Mode):
         canvas.create_rectangle(sx1, sy1, sx2, sy2, fill = 'pink')
         canvas.create_text((sx1 + sx2)/2, (sy1 + sy2)/2, text = f'Score: {mode.score}',
                                 font = 'Arial 20 bold')
+    
+    def drawEvilButton(mode, canvas):
+        ex1, ey1 = mode.ex1, mode.ey1
+        ex2, ey2 = mode.ex2, mode.ey2
+        canvas.create_rectangle(ex1, ey1, ex2, ey2, fill = 'pink')
+        if mode.evilAI:
+            canvas.create_text((ex1 + ex2)/2, (ey1 + ey2)/2, text = 'evil AI: ON',
+                                font = 'Arial 20 bold')
+        else:
+            canvas.create_text((ex1 + ex2)/2, (ey1 + ey2)/2, text = 'evil AI: OFF',
+                                font = 'Arial 20 bold')
 
     def drawJumpsRemaining(mode, canvas):
         jx1, jy1 = mode.width - 400, 20
@@ -614,4 +651,34 @@ class crossyMode(Mode):
                             font = 'Arial 30 bold')
         # if bunny loses
         mode.endGame(canvas)
-                            
+        # draw AI button
+        mode.drawEvilButton(canvas)
+
+    def evilAlgorithm(mode):
+        mode.onRoad = False
+        locExist = False
+        if mode.evilAI:
+            location = (mode.height*9/10 - mode.evilY)/75.5 + 1
+            if location % 1 == 0 and 0 <= location < len(mode.platforms):
+                evilPlatform = mode.platforms[int(location)]
+                nextPlat = mode.platforms[int(location) + 1]
+                locExist = True
+            if mode.onRoad:
+                mode.EWalking = True
+                mode.onRoad = False
+            if (not(mode.isWalking) and not(mode.isBackward)) and locExist:
+                if ((nextPlat[0] == 'grass' or nextPlat == 'ice' or nextPlat == 'sand')
+                    and (mode.seconds % 3 == 0)):
+                    mode.EwentBackward = False
+                    if mode.EonLog:
+                        mode.EonLog = False
+                    mode.EWalking = True
+                elif nextPlat[0] == 'road':
+                    for car in nextPlat[1]:
+                        if (car[0] - mode.carWidth/2) <= mode.evilX <= (car[0] + mode.carWidth/2):
+                            return
+                    if (mode.platforms[int(location) + 2][0] == 'grass' or 
+                        mode.platforms[int(location) + 2] == 'ice' or mode.platforms[int(location) + 2] == 'sand'):
+                        mode.EWalking = True
+                        mode.onRoad = True
+

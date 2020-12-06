@@ -29,3 +29,19 @@ Version Control Plan: I am using github to store and keep track of my code.
 (picture included in folder)
 
 Module List: OpenCV and Leap Motion to track video input movement.
+
+-------
+UPDATES
+-------
+Project Description: Bunny Race
+My project is similar to Crossy Road, but the user is chasing an evil bunny
+and can't let it get too far. The evil bunny can either be controlled by
+the computer or controlled by a second player. If the evil bunny gets too far,
+the good bunny loses. If a bunny dies, the other bunny wins!
+
+Algorithmic Plan: First, the user will change movement based on what surface they 
+are walking on. For example, when walking on ice, there will be reduced friction 
+and the bunny will move faster. This can be done by analyzing the friction of
+each surface and using the kinetic friction equation. Second, the 
+computer-controlled player is moved by analyzing future paths with 
+backtracking algorithms.
