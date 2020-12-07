@@ -57,7 +57,7 @@ class MyModalApp(ModalApp):
         app.crossyMode = crossyMode()
         app.lbMode = lbMode()
         app.setActiveMode(app.splashMode)
-        app.timerDelay = 20
+        app.timerDelay = 20 
 
 MyModalApp(width=1234, height=755)
  

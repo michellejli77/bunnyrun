@@ -49,7 +49,9 @@ class crossyMode(Mode):
         mode.EhasMoved = False
         mode.EfacingRight = False
         mode.EonLog = False
+        mode.EonRoad = False
         mode.evilAI = False
+        mode.moveX = False
         # platforms
         mode.resetPlatforms()
         mode.nextPlat = None
@@ -182,8 +184,8 @@ class crossyMode(Mode):
             mode.generatePlatform()
             mode.jump()
         elif mode.isWalking:
-            mode.platY += mode.miiSpeed
             mode.evilY += mode.miiSpeed
+            mode.platY += mode.miiSpeed
             if mode.miiSpeed != 75.5/8:
                 if 72 < mode.platY < 75.5:
                     mode.evilY += (75.5 - mode.evilY % 75.5)
@@ -194,8 +196,8 @@ class crossyMode(Mode):
             mode.generatePlatform()
             mode.walk()
         elif mode.isBackward:
-            mode.platY -= mode.miiSpeed
             mode.evilY -= mode.miiSpeed
+            mode.platY -= mode.miiSpeed
             if mode.miiSpeed != 75.5/8:
                 if -75.5 < mode.platY < -72:
                     mode.evilY -= (mode.evilY % 75.5)
@@ -204,22 +206,29 @@ class crossyMode(Mode):
                     if mode.onLog:
                         mode.onLog = False
             mode.walkBackward()
-        elif mode.goRight:
-            mode.miiX += 75.5/8
-            mode.moveRight()
-        elif mode.goLeft:
-            mode.miiX -= 75.5/8
-            mode.moveLeft()
-        if mode.EWalking:
+        elif mode.EWalking:
             mode.evilY -= 75.5/8
+            if mode.miiSpeed != 75.5/8:
+                if 72 < (mode.evilY % 75.5/8) < 75.5:
+                    mode.evilY += (75.5 - mode.evilY % 75.5)
+            if mode.onLog:
+                mode.onLog = False
             mode.Ewalk()
         elif mode.EBackward:
             mode.evilY += 75.5/8
+            if mode.onLog:
+                mode.onLog = False
             mode.EwalkBackward()
-        elif mode.EgoRight:
+        if mode.goRight:
+            mode.miiX += mode.miiSpeed
+            mode.moveRight()
+        if mode.goLeft:
+            mode.miiX -= mode.miiSpeed
+            mode.moveLeft()
+        if mode.EgoRight:
             mode.evilX += 75.5/8
             mode.EmoveRight()
-        elif mode.EgoLeft:
+        if mode.EgoLeft:
             mode.evilX -= 75.5/8
             mode.EmoveLeft()
         if mode.isFinished:
@@ -357,11 +366,27 @@ class crossyMode(Mode):
             mode.platforms.pop()
             
     def moveRight(mode):
+        dist = abs((mode.miiX) - mode.width/2) % 75.5
+        if  0 < ((mode.miiX) - mode.width/2) < 3.5:
+            mode.miiX = mode.width/2
+        if 72 < dist < 75.5:
+            if ((mode.miiX) - mode.width/2) > 0:
+                mode.miiX += (75.5 - dist)
+            else:
+                mode.miiX -= (75.5 - dist)  
         if (mode.miiX - mode.width/2) % 75.5 == 0:
             mode.facingRight = True
             mode.goRight = False 
     
     def moveLeft(mode):
+        dist = abs((mode.miiX) - mode.width/2) % 75.5
+        if  -3.5 < ((mode.miiX) - mode.width/2) < 0:
+            mode.miiX = mode.width/2
+        if 72 < dist < 75.5:
+            if ((mode.miiX) - mode.width/2) > 0:
+                mode.miiX += (75.5 - dist)
+            else:
+                mode.miiX -= (75.5 - dist)      
         if (mode.miiX - mode.width/2) % 75.5 == 0:
             mode.facingRight = False
             mode.goLeft = False 
@@ -381,6 +406,18 @@ class crossyMode(Mode):
             mode.isJumping = False
             mode.miiVel = 7.5
             mode.miiMass = 1
+            dist = abs((mode.miiX) - mode.width/2) % 75.5
+            if dist != 0:
+                if (mode.miiX) - mode.width/2 > 0:
+                    if dist < 75.5/2:
+                        mode.miiX -= dist
+                    else:
+                        mode.miiX += (75.5 - dist)
+                else:
+                    if dist < 75.5/2:
+                        mode.miiX += dist
+                    else:
+                        mode.miiX -= (75.5 - dist)
     
     def Ewalk(mode):
         if mode.evilY % (75.5/2) == 0:
@@ -434,8 +471,7 @@ class crossyMode(Mode):
                 for log in evilPlatform[1]:
                     if (log[0] <= mode.evilX <= log[1]):
                         mode.EonLog = True
-        if mode.EonLog:
-            mode.evilX += 2
+                        mode.evilX += 2
                     
     def chooseTrees(mode):
         for platform in mode.platforms:
@@ -655,41 +691,49 @@ class crossyMode(Mode):
         mode.drawEvilButton(canvas)
 
     def evilAlgorithm(mode):
-        mode.onRoad = False
-        mode.onRiver = False
         locExist = False
+        if mode.EonRoad:
+            mode.EWalking = True
+            mode.EonRoad = False
         if mode.evilAI:
             location = (mode.height*9/10 - mode.evilY)/75.5 + 1
-            if location % 1 == 0 and 0 <= location < len(mode.platforms):
+            if location % 1 == 0 and 0 <= location < len(mode.platforms) - 1:
                 evilPlatform = mode.platforms[int(location)]
                 nextPlat = mode.platforms[int(location) + 1]
                 locExist = True
-            if mode.onRoad or mode.onRiver:
-                mode.EWalking = True
-                mode.onRoad = False
-                mode.onRiver = False
-            if (not(mode.isWalking) and not(mode.isBackward)) and locExist:
+                if evilPlatform[0] != 'river':
+                    mode.EonLog = False
+            if locExist:
+                # if evilPlatform[0] == 'road' and mode.seconds % 2 == 0:
+                #     mode.EgoLeft = True
                 if ((nextPlat[0] == 'grass' or nextPlat == 'ice' or nextPlat == 'sand'
                     or nextPlat[0] == 'lava')
                     and (mode.seconds % 3 == 0)):
                     mode.EwentBackward = False
-                    if mode.EonLog:
-                        mode.EonLog = False
                     mode.EWalking = True
                 elif nextPlat[0] == 'road':
                     for car in nextPlat[1]:
-                        if (car[0] - mode.carWidth/2) <= mode.evilX <= (car[0] + mode.carWidth/2):
+                        if (car[0] - mode.carWidth/2 - 40) <= mode.evilX <= (car[0] + mode.carWidth/2):
                             return
-                    if (mode.platforms[int(location) + 2][0] == 'grass' or 
-                        mode.platforms[int(location) + 2] == 'ice' or mode.platforms[int(location) + 2] == 'sand'):
-                        mode.EWalking = True
-                        mode.onRoad = True
+                    mode.EWalking = True
+                    mode.evilX -= 4
+                    mode.EonRoad = True
+                    # if (mode.platforms[int(location) + 2][0] == 'grass' or 
+                    #     mode.platforms[int(location) + 2] == 'ice' or mode.platforms[int(location) + 2] == 'sand'
+                    #     or mode.platforms[int(location) + 2][0] == 'lava'):
                 elif nextPlat[0] == 'river':
                     for log in nextPlat[1]:
-                        if (log[0] <= mode.evilX <= log[1]):
+                        if (log[0] + 20 <= mode.evilX <= log[1] - 20):
+                            mode.EWalking = True
                             return
-                    if (mode.platforms[int(location) + 2][0] == 'grass' or 
-                        mode.platforms[int(location) + 2] == 'ice' or mode.platforms[int(location) + 2] == 'sand'):
-                        mode.EWalking = True
-                        mode.onRiver = True
+                    mode.moveX = True
+            if (mode.moveX and not(mode.EgoRight) and not(mode.EgoLeft) and mode.timerFiredTime % 60 == 0
+                and not(mode.onLog)):
+                RorL = random.randint(0,1)
+                if RorL == 0:
+                    mode.EgoRight = True
+                else:
+                    mode.EgoLeft = True
+                mode.moveX = False
+
 
