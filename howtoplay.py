@@ -6,6 +6,7 @@ class howToPlay(Mode):
         # back button
         mode.bx1, mode.by1 = 20, 20
         mode.bx2, mode.by2 = 120, 50
+        # instructions made on canva
         mode.pic1 = mode.loadImage('images/instructions.png')
         mode.pic = mode.scaleImage(mode.pic1, .8)
     

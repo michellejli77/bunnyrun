@@ -25,6 +25,7 @@ class onePlayer(twoPlayer):
         pygame.init()
         mode.play()
         # character
+        # https://www.google.com/url?sa=i&url=http%3A%2F%2Frebloggy.com%2Fpost%2Fgif-cute-walk-spin-molang%2F129723665143&psig=AOvVaw2bRtEkaJtpMKZeWF6gVyNL&ust=1607627493768000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCMj3iqDNwe0CFQAAAAAdAAAAABAJ
         mode.oldsprite = mode.loadImage('images/molang.png')
         imageWidth, imageHeight = mode.oldsprite.size
         mode.sprite = mode.scaleImage(mode.oldsprite, (mode.height/10)/imageWidth*1.3)
@@ -54,7 +55,7 @@ class onePlayer(twoPlayer):
         mode.coin1 = mode.loadImage('images/carrot.png')
         mode.coin = mode.scaleImage(mode.coin1,.3)
         mode.totalCoins = 0
-        # road and cars
+        # road and cars - other cars edited from same source
         # https://lh3.googleusercontent.com/proxy/kaw3Loo5EIMb9IzvJpvV24P3f_Ozy09cSDCtyqvNRpRDcFrRlmGyx-yZyWPMgjp57TNHMHh8NPE9LoQ7uR2qTthL
         mode.redcar1 = mode.loadImage('images/redcar.png')
         mode.redcar = mode.scaleImage(mode.redcar1, .32/1.5)
@@ -114,6 +115,7 @@ class onePlayer(twoPlayer):
     
     # idea from https://stackoverflow.com/questions/42393916/how-can-i-play-multiple-sounds-at-the-same-time-in-pygame
     def bounceNoise(mode):
+        # https://www.youtube.com/watch?v=jfSbP8MBU5Q
         pygame.mixer.Channel(1).play(pygame.mixer.Sound('music/jump.mp3'))
         pygame.mixer.Channel(1).set_volume(.1)
     
@@ -611,7 +613,6 @@ class onePlayer(twoPlayer):
         canvas.create_rectangle(jx1, jy1, jx2, jy2, fill = 'pink')
         canvas.create_text((jx1 + jx2)/2, (jy1 + jy2)/2, text = f'carrots: {mode.totalCoins}',
                                 font = 'Arial 20 bold')
-
     
     def endGame(mode, canvas):
         if mode.isFinished:
@@ -663,8 +664,4 @@ class onePlayer(twoPlayer):
             canvas.create_text(mode.width/2, mode.height/2, 
                         text = "- bunny is now affected by friction of surfaces",
                             font = 'Arial 30 bold')
-            # canvas.create_text(mode.width/2, mode.height/2 + 40, 
-            #             text = "don't let evil bunny get away!",
-            #                 font = 'Arial 30 bold')
-        # if bunny loses
         mode.endGame(canvas)

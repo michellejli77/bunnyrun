@@ -16,9 +16,11 @@ class twoPlayer(Mode):
         pygame.init()
         mode.play()
         # character
+        # https://www.google.com/url?sa=i&url=http%3A%2F%2Frebloggy.com%2Fpost%2Fgif-cute-walk-spin-molang%2F129723665143&psig=AOvVaw2bRtEkaJtpMKZeWF6gVyNL&ust=1607627493768000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCMj3iqDNwe0CFQAAAAAdAAAAABAJ
         mode.oldsprite = mode.loadImage('images/molang.png')
         imageWidth, imageHeight = mode.oldsprite.size
         mode.sprite = mode.scaleImage(mode.oldsprite, (mode.height/10)/imageWidth*1.3)
+        # edited using molang.png
         mode.evilBunny1 = mode.loadImage('images/evilBunny.png')
         mode.evilBunny = mode.scaleImage(mode.evilBunny1, (mode.height/10)/imageWidth*1.3)
         # mii character info
@@ -58,7 +60,7 @@ class twoPlayer(Mode):
         # platforms
         mode.resetPlatforms()
         mode.nextPlat = None
-        # road and cars
+        # road and cars - other cars edited from same source
         # https://lh3.googleusercontent.com/proxy/kaw3Loo5EIMb9IzvJpvV24P3f_Ozy09cSDCtyqvNRpRDcFrRlmGyx-yZyWPMgjp57TNHMHh8NPE9LoQ7uR2qTthL
         mode.redcar1 = mode.loadImage('images/redcar.png')
         mode.redcar = mode.scaleImage(mode.redcar1, .32/1.5)
@@ -121,6 +123,7 @@ class twoPlayer(Mode):
     
     # idea from https://stackoverflow.com/questions/42393916/how-can-i-play-multiple-sounds-at-the-same-time-in-pygame
     def bounceNoise(mode):
+        # https://www.youtube.com/watch?v=jfSbP8MBU5Q
         pygame.mixer.Channel(1).play(pygame.mixer.Sound('music/jump.mp3'))
         pygame.mixer.Channel(1).set_volume(.1)
     
