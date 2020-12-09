@@ -789,7 +789,7 @@ class twoPlayer(Mode):
                             mode.EgoLeft = True
                 if ((nextPlat[0] == 'grass' or nextPlat == 'ice' or nextPlat == 'sand'
                     or nextPlat[0] == 'lava')
-                    and mode.timerFiredTime % 15 == 0):
+                    and mode.timerFiredTime % 10 == 0):
                     mode.EwentBackward = False
                     mode.EWalking = True
                 elif nextPlat[0] == 'road':
