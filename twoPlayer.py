@@ -6,13 +6,18 @@ import time
 import copy
 import random
 from cmu_112_graphics import *
+from operator import itemgetter
+import pygame
+
 # game mode
-class crossyMode(Mode):
+class twoPlayer(Mode):
     # https://www.cs.cmu.edu/~112/notes/notes-graphics.html
     def rgbString(r, g, b):
         return f'#{r:02x}{g:02x}{b:02x}'
 
     def appStarted(mode):
+        pygame.init()
+        mode.play()
         # character
         mode.oldsprite = mode.loadImage('images/molang.png')
         imageWidth, imageHeight = mode.oldsprite.size
@@ -54,13 +59,8 @@ class crossyMode(Mode):
         mode.moveX = False
         mode.EwentOffScreen = False
         # platforms
-        mode.platCoins = []
         mode.resetPlatforms()
         mode.nextPlat = None
-        # coins
-        # https://creazilla-store.fra1.digitaloceanspaces.com/cliparts/60815/golden-dollar-coin-clipart-md.png
-        mode.coin1 = mode.loadImage('images/coin.png')
-        mode.coin = mode.scaleImage(mode.coin1, .05)
         # road and cars
         # https://lh3.googleusercontent.com/proxy/kaw3Loo5EIMb9IzvJpvV24P3f_Ozy09cSDCtyqvNRpRDcFrRlmGyx-yZyWPMgjp57TNHMHh8NPE9LoQ7uR2qTthL
         mode.redcar1 = mode.loadImage('images/redcar.png')
@@ -96,11 +96,36 @@ class crossyMode(Mode):
         # scores
         mode.score = 0
         mode.name = None
+        mode.highScores = []
+        # access leaderboard file and get scores
+        leaderboard = open('leaderboard.txt', 'r')
+        scores = leaderboard.readlines()
+        for score in scores:
+            comma = score.find(',')
+            name = score[:comma]
+            pscore = score[comma + 1:]
+            pscore = pscore.strip()
+            if pscore != '':
+                mode.highScores.append([name, int(pscore)])
+        # from https://stackoverflow.com/questions/18563680/sorting-2d-list-python
+        mode.highScores.sort(key=itemgetter(1), reverse=True)
         # friction
         mode.frictionCoeff = {'ice': .03, 'sand': .4, 'grass': .35}
         # time
         mode.timerFiredTime = 0
         mode.seconds = 0
+    
+    # learned how to use from https://stackoverflow.com/questions/38966257/how-to-play-sounds-on-python-with-tkinter/53670523
+    def play(mode):
+        # https://www.youtube.com/watch?v=qrgUzN7pE9Y
+        pygame.mixer.music.load("music/cute1.mp3") 
+        pygame.mixer.music.play(-1) 
+        pygame.mixer.music.set_volume(.5)
+    
+    # idea from https://stackoverflow.com/questions/42393916/how-can-i-play-multiple-sounds-at-the-same-time-in-pygame
+    def bounceNoise(mode):
+        pygame.mixer.Channel(1).play(pygame.mixer.Sound('music/jump.mp3'))
+        pygame.mixer.Channel(1).set_volume(.1)
     
     def backgroundPics(mode):
         # https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.pngitem.com%2Fmiddle%2FhTbmTb_life-clipart-colorful-tree-transparent-background-tree-clipart%2F&psig=AOvVaw13JaeiR3H6uoCgNc0NZDWT&ust=1606890271306000&source=images&cd=vfe&ved=0CAIQjRxqFwoTCNjHjveSrO0CFQAAAAAdAAAAABAa
@@ -112,11 +137,6 @@ class crossyMode(Mode):
         mode.platforms =  [['grass', []]] + [['grass', []]] + [['grass', []]] + \
                             [['grass', []]] + [None]*8
         mode.chooseTrees()
-        for index in range(len(mode.platforms)):
-            coinLocation = random.randint(0, 12)
-            mode.platCoins += [coinLocation]
-            if index % 2 == 0:
-                mode.platCoins[index] = None
         index = 4
         while index < len(mode.platforms):
             num = random.randint(0, 5)
@@ -131,7 +151,6 @@ class crossyMode(Mode):
         mode.platY = 0
         mode.totalTime = 60
         mode.endTime = None
-        print(mode.platCoins)
 
     def keyPressed(mode, event):
         if (event.key == 'Space' or event.key == 'Up' or event.key == 'Down'):
@@ -194,7 +213,7 @@ class crossyMode(Mode):
         mode.moveOnLog()
         if (mode.fellInLava or mode.fellInWater or mode.hitByCar 
             or mode.wentOffScreen or mode.EfellInWater or mode.EhitByCar
-            or mode.EwentOffScreen):
+            or mode.EwentOffScreen or mode.miiLost):
             mode.isFinished = True
         elif mode.isJumping:
             mode.platY += 75.5/8
@@ -202,8 +221,8 @@ class crossyMode(Mode):
             mode.generatePlatform()
             mode.jump()
         elif mode.isWalking:
-            mode.evilY += mode.miiSpeed
-            mode.platY += mode.miiSpeed
+            mode.evilY += 75.5/8
+            mode.platY += 75.5/8
             if mode.miiSpeed != 75.5/8:
                 if 72 < mode.platY < 75.5:
                     mode.evilY += (75.5 - mode.evilY % 75.5)
@@ -229,18 +248,18 @@ class crossyMode(Mode):
             if mode.miiSpeed != 75.5/8:
                 if 72 < (mode.evilY % 75.5) < 75.5:
                     mode.evilY += (75.5 - mode.evilY % 75.5)
-            if mode.onLog:
-                mode.onLog = False
+            if mode.EonLog:
+                mode.EonLog = False
             mode.Ewalk()
         elif mode.EBackward:
             mode.evilY += 75.5/8
-            if mode.onLog:
-                mode.onLog = False
+            if mode.EonLog:
+                mode.EonLog = False
             mode.EwalkBackward()
         if mode.goRight and not(mode.onLog):
             mode.miiX += 75.5/8
             mode.moveRight()
-        if mode.goLeft:
+        if mode.goLeft and not(mode.onLog):
             mode.miiX -= 75.5/8
             mode.moveLeft()
         if mode.EgoRight:
@@ -258,7 +277,8 @@ class crossyMode(Mode):
                 mode.showMessage('No name entered')
                 mode.name = mode.getUserInput('Enter name: ')
             leaderboard = open('leaderboard.txt', 'a')
-            leaderboard.write(f'{mode.name},{mode.score}\n')
+            if mode.name != None:
+                leaderboard.write(f'{mode.name},{mode.score}\n')
             mode.appStarted()
             mode.app.setActiveMode(mode.app.lbMode)
         # move the river
@@ -268,6 +288,7 @@ class crossyMode(Mode):
     
     def mousePressed(mode, event):
         if (mode.bx1 <= event.x <= mode.bx2 and mode.by1 <= event.y <= mode.by2):
+            pygame.mixer.music.pause()
             mode.app.setActiveMode(mode.app.splashMode)
         if (mode.rx1 <= event.x <= mode.rx2 and mode.ry1 <= event.y <= mode.ry2):
             mode.appStarted()
@@ -275,12 +296,12 @@ class crossyMode(Mode):
             mode.evilAI = not(mode.evilAI)
     
     def generatePlatform(mode):
+        if mode.score % 50 == 0 and mode.score > 0:
+            mode.jumpsLeft += 1
         platOptions = [['grass', []], 'ice', 'sand', ['road', []], 
                         ['river', []], ['lava', None]]
         if (mode.platY % (mode.height/10) == 0 or
                  (mode.miiSpeed != 75.5/8 and mode.platY > 72)):
-            coinLocation = random.randint(0, 12)
-            mode.platCoins += [coinLocation]
             mode.score += 1
             mode.platY = 0
             if mode.wentBackward == False:
@@ -328,7 +349,8 @@ class crossyMode(Mode):
         elif (platform[0] == 'lava' and mode.isJumping == False 
                 and platform[1] != bunnyX and mode.onLog == False):
             mode.fellInLava = True
-        elif platform[0] == 'river' and mode.isJumping == False and mode.onLog == False:
+        elif (platform[0] == 'river' and mode.isJumping == False and mode.onLog == False
+            and mode.isWalking == False):
             for log in platform[1]:
                 if (log[0] <= mode.miiX <= log[1]):
                     return
@@ -357,7 +379,7 @@ class crossyMode(Mode):
             mode.wentOffScreen = True
         if (mode.evilX < 20) or (mode.evilX > mode.width + 20):
             mode.EwentOffScreen = True
-        if mode.evilY < 50:
+        if mode.evilY < -20:
             mode.miiLost = True
                 
     # make bunny walk
@@ -378,6 +400,7 @@ class crossyMode(Mode):
                 else:
                     mode.miiX -= (75.5 - dist)
         if mode.platY % 75.5 == 0:
+            mode.bounceNoise()
             mode.isWalking = False
             if mode.onLog:
                 mode.onLog = False
@@ -388,6 +411,7 @@ class crossyMode(Mode):
             mode.sprite = mode.sprite.transpose(Image.FLIP_LEFT_RIGHT)
             mode.facingRight = not(mode.facingRight)
         if mode.platY % 75.5 == 0:
+            mode.bounceNoise()
             mode.isBackward = False
             mode.platY = 0
             mode.platforms.insert(0, ['grass', []])
@@ -395,14 +419,15 @@ class crossyMode(Mode):
             
     def moveRight(mode):
         dist = abs((mode.miiX) - mode.width/2) % 75.5
-        if  0 < ((mode.miiX) - mode.width/2) < 3.5:
+        if 0 < ((mode.miiX) - mode.width/2) < 3.5:
             mode.miiX = mode.width/2
-        if 72 < dist < 75.5 and not(mode.onLog):
+        if 72 < dist < 75.5:
             if ((mode.miiX) - mode.width/2) > 0:
                 mode.miiX += (75.5 - dist)
             else:
                 mode.miiX -= (75.5 - dist)  
         if (mode.miiX - mode.width/2) % 75.5 == 0:
+            mode.bounceNoise()
             mode.facingRight = True
             mode.goRight = False 
     
@@ -416,6 +441,7 @@ class crossyMode(Mode):
             else:
                 mode.miiX -= (75.5 - dist)      
         if (mode.miiX - mode.width/2) % 75.5 == 0:
+            mode.bounceNoise()
             mode.facingRight = False
             mode.goLeft = False 
 
@@ -430,12 +456,14 @@ class crossyMode(Mode):
             mode.miiMass = -1
         if mode.miiVel == .5:
             mode.sprite = mode.sprite.transpose(Image.FLIP_LEFT_RIGHT)
+            mode.facingRight = not(mode.facingRight)
         if mode.miiVel == -8.5:
             mode.isJumping = False
             mode.miiVel = 7.5
             mode.miiMass = 1
+            mode.bounceNoise()
             dist = abs((mode.miiX) - mode.width/2) % 75.5
-            if dist != 0:
+            if dist != 0 and not(mode.onLog):
                 if (mode.miiX) - mode.width/2 > 0:
                     if dist < 75.5/2:
                         mode.miiX -= dist
@@ -446,6 +474,8 @@ class crossyMode(Mode):
                         mode.miiX += dist
                     else:
                         mode.miiX -= (75.5 - dist)
+            if mode.onLog:
+                mode.onLog = False
     
     def Ewalk(mode):
         if mode.evilY % (75.5/2) == 0:
@@ -463,6 +493,7 @@ class crossyMode(Mode):
             else:
                 mode.evilX -= (75.5 - dist)
         if mode.evilY % 75.5 == 0:
+            mode.bounceNoise()
             mode.EWalking = False
             if mode.EonLog:
                 mode.EonLog = False      
@@ -473,14 +504,17 @@ class crossyMode(Mode):
             mode.evilBunny = mode.evilBunny.transpose(Image.FLIP_LEFT_RIGHT)
             mode.EfacingRight = not(mode.EfacingRight)
         if mode.evilY % 75.5 == 0:
+            mode.bounceNoise()
             mode.EBackward = False
             
     def EmoveRight(mode):
         if (mode.evilX - mode.width/2) % 75.5 == 0:
             mode.EgoRight = False 
+            mode.bounceNoise()
     
     def EmoveLeft(mode):
         if (mode.evilX - mode.width/2) % 75.5 == 0:
+            mode.bounceNoise()
             mode.EgoLeft = False 
     
     # move character if standing on log
@@ -489,17 +523,18 @@ class crossyMode(Mode):
         if platform[0] == 'river':
             for log in platform[1]:
                 if (log[0] <= mode.miiX <= log[1]):
-                    mode.onLog = True
                     mode.miiX += 2
+                    mode.onLog = True
         # check if evil bunny is on a log
-        location = int((mode.height*9/10 - mode.evilY)/75.5 + 1)
-        if 0 <= location < len(mode.platforms):
+        location = (mode.height*9/10 - mode.evilY)/75.5 + 1
+        if location % 1 == 0 and 0 <= int(location) < len(mode.platforms):
             evilPlatform = mode.platforms[int(location)]
             if evilPlatform[0] == 'river':
                 for log in evilPlatform[1]:
                     if (log[0] <= mode.evilX <= log[1]):
                         mode.EonLog = True
-                        mode.evilX += 2
+        if mode.EonLog:
+            mode.evilX += 2
                     
     def chooseTrees(mode):
         for platform in mode.platforms:
@@ -608,7 +643,7 @@ class crossyMode(Mode):
         r = 255
         g = 5
         for block in range(int(y - mode.height/10), int(y), int(mode.height/10/16)):
-            color = crossyMode.rgbString(r, g, 0)
+            color = twoPlayer.rgbString(r, g, 0)
             canvas.create_rectangle(0, block, mode.width, block + mode.height/10/16, 
                                     fill = color, outline = color)
             g += 13
@@ -642,20 +677,11 @@ class crossyMode(Mode):
                 mode.drawGrass(canvas, y + mode.platY, platform, len(mode.platforms) - index - 1)
             y += mode.height/10
     
-    def drawCoins(mode, canvas):
-        y = 0
-        for index in range(len(mode.platforms)):
-            if mode.platCoins[index] != None:
-                coinX = mode.width/2 - (6 - mode.platCoins[index])*mode.height/10 - mode.height/20
-                coinY = (y + y + mode.height/10)/2
-                canvas.create_image(coinX, coinY, image=ImageTk.PhotoImage(mode.coin))
-            y += mode.height/10
-    
     def drawScore(mode, canvas):
         sx1, sy1 = mode.width - 200, 20
         sx2, sy2 = mode.width - 20, 80
         canvas.create_rectangle(sx1, sy1, sx2, sy2, fill = 'pink')
-        canvas.create_text((sx1 + sx2)/2, (sy1 + sy2)/2, text = f'Score: {mode.score}',
+        canvas.create_text((sx1 + sx2)/2, (sy1 + sy2)/2, text = f'score: {mode.score}',
                                 font = 'Arial 20 bold')
     
     def drawEvilButton(mode, canvas):
@@ -673,7 +699,7 @@ class crossyMode(Mode):
         jx1, jy1 = mode.width - 400, 20
         jx2, jy2 = mode.width - 220, 80
         canvas.create_rectangle(jx1, jy1, jx2, jy2, fill = 'pink')
-        canvas.create_text((jx1 + jx2)/2, (jy1 + jy2)/2, text = f'Jumps left: {mode.jumpsLeft}',
+        canvas.create_text((jx1 + jx2)/2, (jy1 + jy2)/2, text = f'jumps left: {mode.jumpsLeft}',
                                 font = 'Arial 20 bold')
     
     def endGame(mode, canvas):
@@ -682,16 +708,16 @@ class crossyMode(Mode):
                         mode.width/2 + 400, mode.height/2 + 80,
                         fill = '#fcfc9d')
             if mode.fellInLava:
-                canvas.create_text(mode.width/2, mode.height/2, text = 'good bunny fell in lava :(',
+                canvas.create_text(mode.width/2, mode.height/2, text = 'angel bunny fell in lava :(',
                         font = 'Arial 30 bold')
             elif mode.fellInWater:
-                canvas.create_text(mode.width/2, mode.height/2, text = 'good bunny drowned :(',
+                canvas.create_text(mode.width/2, mode.height/2, text = 'angel bunny drowned :(',
                         font = 'Arial 30 bold')
             elif mode.hitByCar:
-                canvas.create_text(mode.width/2, mode.height/2, text = 'good bunny got hit by a car :(',
+                canvas.create_text(mode.width/2, mode.height/2, text = 'angel bunny got hit by a car :(',
                         font = 'Arial 30 bold')
             elif mode.wentOffScreen:
-                canvas.create_text(mode.width/2, mode.height/2, text = 'good bunny disappeared into the void',
+                canvas.create_text(mode.width/2, mode.height/2, text = 'angel bunny disappeared into the void',
                         font = 'Arial 30 bold')
             elif mode.EfellInWater:
                 canvas.create_text(mode.width/2, mode.height/2, text = 'evil bunny drowned :)',
@@ -709,8 +735,6 @@ class crossyMode(Mode):
     def redrawAll(mode, canvas):
         # platform 
         mode.drawPlatforms(canvas)
-        # draw coins
-        # mode.drawCoins(canvas)
         # draw character
         canvas.create_image(mode.miiX, mode.miiY, image=ImageTk.PhotoImage(mode.sprite))
         canvas.create_image(mode.evilX, mode.evilY, image=ImageTk.PhotoImage(mode.evilBunny))
@@ -732,19 +756,18 @@ class crossyMode(Mode):
                         mode.width/2 + 400, mode.height/2 + 80,
                         fill = '#fcfc9d')
             canvas.create_text(mode.width/2, mode.height/2 - 40, 
-                        text = "good bunny can jump, evil bunny cannot",
+                        text = "- angel bunny can jump, evil bunny cannot",
                             font = 'Arial 30 bold')
             canvas.create_text(mode.width/2, mode.height/2, 
-                        text = "evil bunny can walk through lava, good bunny cannot",
+                        text = "- evil bunny can walk through lava, angel bunny cannot",
                             font = 'Arial 30 bold')
             canvas.create_text(mode.width/2, mode.height/2 + 40, 
-                        text = "don't let evil bunny get away!",
+                        text = "- don't let evil bunny get away!",
                             font = 'Arial 30 bold')
         # if bunny loses
         mode.endGame(canvas)
         # draw AI button
         mode.drawEvilButton(canvas)
-
 
     def evilAlgorithm(mode):
         evilPlatform = 'none'
@@ -771,7 +794,7 @@ class crossyMode(Mode):
                     mode.EWalking = True
                 elif nextPlat[0] == 'road':
                     for car in nextPlat[1]:
-                        if (car[0] - mode.carWidth/2 - 80) <= mode.evilX <= (car[0] + mode.carWidth/2):
+                        if (car[0] - mode.carWidth/2 - 60) <= mode.evilX <= (car[0] + mode.carWidth/2):
                             return
                     mode.EWalking = True
                     if (mode.platforms[int(location) + 2][0] == 'grass' or 
@@ -787,11 +810,16 @@ class crossyMode(Mode):
             if (mode.moveX and not(mode.EgoRight) and not(mode.EgoLeft) and 
                 mode.timerFiredTime % 30 == 0
                 and not(mode.EonLog) and evilPlatform[0] != 'road'):
-                RorL = random.randint(0,1)
-                if RorL == 0:
+                if mode.evilX < mode.width * 1/3:
                     mode.EgoRight = True
-                else:
+                elif mode.evilX > mode.width * 2/3:
                     mode.EgoLeft = True
+                else:
+                    RorL = random.randint(0,1)
+                    if RorL == 0:
+                        mode.EgoRight = True
+                    else:
+                        mode.EgoLeft = True
                 mode.moveX = False
 
 

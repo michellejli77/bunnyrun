@@ -1,1 +1,6 @@
-michelle,1004
+michelle,100
+ethan,300
+mama,1
+lily,20
+joe,2
+bongbong,39
