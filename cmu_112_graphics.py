@@ -2,7 +2,7 @@
 # version 0.8.6
 
 # Pre-release for CMU 15-112-f20
-
+import pygame
 # Require Python 3.6 or later
 import sys
 if ((sys.version_info[0] != 3) or (sys.version_info[1] < 6)):
@@ -314,6 +314,7 @@ class App(object):
 
     def quit(app):
         app._running = False
+        pygame.mixer.music.stop()
         app._root.quit() # break out of root.mainloop() without closing window!
 
     def __setattr__(app, attr, val):

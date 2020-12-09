@@ -1,3 +1,4 @@
+# this class/file creates the leaderboard
 from cmu_112_graphics import *
 from twoPlayer import *
 

@@ -33,6 +33,7 @@ Module List: OpenCV and Leap Motion to track video input movement.
 -------
 UPDATES
 -------
+TP2:
 Project Description: Bunny Race
 My project is similar to Crossy Road, but the user is chasing an evil bunny
 and can't let it get too far. The evil bunny can either be controlled by
@@ -43,5 +44,15 @@ Algorithmic Plan: First, the user will change movement based on what surface the
 are walking on. For example, when walking on ice, there will be reduced friction 
 and the bunny will move faster. This can be done by analyzing the friction of
 each surface and using the kinetic friction equation. Second, the 
-computer-controlled player is moved by analyzing future paths with 
-backtracking algorithms.
+computer-controlled player is moved by analyzing future paths and choosing
+the best direction to travel in.
+
+TP3:
+I made the evil AI's movement much smoother, and it can detect roads and 
+rivers and knows when to cross. I added a leaderboard.txt file so all
+users who play the game will have their score saved on the same file. I added
+music and sound effects whenever the bunnies move. I separated single
+player and two player into different modes and added a carrot collecting
+feature to the single player mode. Lastly, I added an instructions page 
+with details on how to play and improved the user interface (mostly the home
+page).

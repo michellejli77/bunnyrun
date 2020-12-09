@@ -1,3 +1,4 @@
+# this class has info on the 'how to play' screen
 from cmu_112_graphics import *
 
 class howToPlay(Mode):

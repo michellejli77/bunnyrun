@@ -1,7 +1,4 @@
-# evil bunny can't jump but is not impacted by terrain/friction
-# good bunny has limited number of jumps
-
-# NEW VERSION
+# this class/file contains all the informatino for two player bunny run
 import time
 import copy
 import random

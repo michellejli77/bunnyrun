@@ -1,5 +1,4 @@
-# good bunny has limited number of jumps
-# NEW VERSION
+# this class/file contains all the informatino for one player bunny run
 import time
 import copy
 import random
