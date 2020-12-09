@@ -1,0 +1,16 @@
+Bunny Run
+
+Description: Bunny Run is an endless arcade game similar to Crossy Road. 
+A bunny has to navigate itself across platforms by swerving traffic,
+crossing rivers, and avoiding lava. However, unlike Crossy Road, 
+there is a two-player mode, where the bunny races against an evil bunny 
+controlled by a second player or by the computer. If the evil bunny
+gets too far ahead, the evil bunny wins.
+
+How to run the project: There are no additional data/source files;
+simply run main.py to play the game!
+
+Libraries: The only library used is cmu_112_graphics (tKinter).
+
+Shortcut Commands: All the ways to change game preferences are shown
+on the game screen.

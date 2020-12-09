@@ -1,7 +1,5 @@
 from cmu_112_graphics import *
-from cmu_112_graphics import *
 import time
-from game import *
 from crossy import *
 from leaderboard import *
 
@@ -36,24 +34,17 @@ class splashMode(Mode):
         canvas.create_rectangle(mode.lx1, mode.ly1, mode.lx2, mode.ly2, fill = 'pink')
         canvas.create_text((mode.lx1 + mode.lx2)/2, (mode.ly1 + mode.ly2)/2, text = 'leaderboard',
                             font = 'System 50 bold')
-        # old ver button
-        canvas.create_rectangle(mode.ox1, mode.oy1, mode.ox2, mode.oy2, fill = 'pink')
-        canvas.create_text((mode.ox1 + mode.ox2)/2, (mode.oy1 + mode.oy2)/2, text = 'old ver',
-                            font = 'System 50 bold')
     
     def mousePressed(mode, event):
         if (mode.bx1 <= event.x <= mode.bx2 and mode.by1 <= event.y <= mode.by2):
             mode.app.setActiveMode(mode.app.crossyMode)
         if (mode.lx1 >= event.x >= mode.lx2 and mode.ly1 <= event.y <= mode.ly2):
             mode.app.setActiveMode(mode.app.lbMode)
-        if (mode.ox1 <= event.x <= mode.ox2 and mode.oy1 <= event.y <= mode.oy2):
-            mode.app.setActiveMode(mode.app.gameMode)
 
-# from http://www.cs.cmu.edu/~112/notes/notes-animations-part3.html#subclassingModalApp
+# learned from http://www.cs.cmu.edu/~112/notes/notes-animations-part3.html#subclassingModalApp
 class MyModalApp(ModalApp):
     def appStarted(app):
         app.splashMode = splashMode()
-        app.gameMode = gameMode()
         app.crossyMode = crossyMode()
         app.lbMode = lbMode()
         app.setActiveMode(app.splashMode)
