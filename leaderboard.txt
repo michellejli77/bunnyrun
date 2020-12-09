@@ -1,13 +1,1 @@
-michelle,100
-ethan,300
-mama,1
-lily,20
-joe,2
-bongbong,39
-michelle,10
-bobob,16
-michelle !!,23
-michelle !!!!,9
-michelle!!!!!,33
-evilbunny,13
-michelleee,17
+michelle,10000
