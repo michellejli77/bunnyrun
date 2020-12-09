@@ -620,16 +620,16 @@ class onePlayer(twoPlayer):
                         mode.width/2 + 400, mode.height/2 + 80,
                         fill = '#fcfc9d')
             if mode.fellInLava:
-                canvas.create_text(mode.width/2, mode.height/2, text = 'good bunny fell in lava :(',
+                canvas.create_text(mode.width/2, mode.height/2, text = 'angel bunny fell in lava :(',
                         font = 'Arial 30 bold')
             elif mode.fellInWater:
-                canvas.create_text(mode.width/2, mode.height/2, text = 'good bunny drowned :(',
+                canvas.create_text(mode.width/2, mode.height/2, text = 'angel bunny drowned :(',
                         font = 'Arial 30 bold')
             elif mode.hitByCar:
-                canvas.create_text(mode.width/2, mode.height/2, text = 'good bunny got hit by a car :(',
+                canvas.create_text(mode.width/2, mode.height/2, text = 'angel bunny got hit by a car :(',
                         font = 'Arial 30 bold')
             elif mode.wentOffScreen:
-                canvas.create_text(mode.width/2, mode.height/2, text = 'good bunny disappeared into the void',
+                canvas.create_text(mode.width/2, mode.height/2, text = 'angel bunny disappeared into the void',
                         font = 'Arial 30 bold')
 
     def redrawAll(mode, canvas):
