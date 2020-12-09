@@ -7,9 +7,9 @@ there is a two-player mode, where the bunny races against an evil bunny
 controlled by a second player or by the computer. If the evil bunny
 gets too far ahead, the evil bunny wins.
 
-How to run the project: Download the music files from tinyurl.com/bunnymusic,
-and then move the music folder into the bunnyrun directory. Then, run 
-main.py to play the game!
+How to run the project: Download the music files from tinyurl.com/bunnymusic, 
+and then move the music folder into the bunnyrun directory. Then, run main.py 
+to play the game!
 
 Libraries: Other than cmu_112_graphics (Tkinter), my project uses pygame. It 
 can be installed by running this command in the terminal: pip install pygame.
